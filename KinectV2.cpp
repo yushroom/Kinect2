@@ -55,18 +55,18 @@ HRESULT KinectSensorV2::GetFrame(DepthFrameDataV2* pFrameData)
 		return E_FAIL;
 	}
 
-	IDepthFrame* pDepthFrame = NULL;
+	//IDepthFrame* pDepthFrame = NULL;
 
 	HRESULT hr = m_pDepthFrameReader->AcquireLatestFrame(&pDepthFrame);
 
 	if (!SUCCEEDED(hr))
 	{
-		SafeRelease(pDepthFrame);
-		return E_FAIL;
+		//SafeRelease(pDepthFrame);
+		return hr;
 	}
 
 	//INT64 nTime = 0;
-	IFrameDescription* pFrameDescription = NULL;
+	//IFrameDescription* pFrameDescription = NULL;
 	//int nWidth = 0;
 	//int nHeight = 0;
 	//USHORT nDepthMinReliableDistance = 0;
@@ -111,6 +111,12 @@ HRESULT KinectSensorV2::GetFrame(DepthFrameDataV2* pFrameData)
 		hr = pDepthFrame->AccessUnderlyingBuffer(&nBufferSize, &(pFrameData->pBuffer));
 	}
 
-	SafeRelease(pFrameDescription);
+	//SafeRelease(pFrameDescription);
 	return hr;
+}
+
+void KinectSensorV2::ClearFrame()
+{
+	SafeRelease(pFrameDescription);
+	SafeRelease(pDepthFrame);
 }
