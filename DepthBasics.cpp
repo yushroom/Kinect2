@@ -44,17 +44,13 @@ CDepthBasics::CDepthBasics() :
 	m_bSaveScreenshot(false),
 	m_pD2DFactory(NULL),
 	m_pDrawDepth1(NULL),
-	m_pDrawDepth2(NULL),
-	m_pDepthRGBX(NULL)
+	m_pDrawDepth2(NULL)
 {
 	LARGE_INTEGER qpf = { 0 };
 	if (QueryPerformanceFrequency(&qpf))
 	{
 		m_fFreq = double(qpf.QuadPart);
 	}
-
-	// create heap storage for depth pixel data in RGBX format
-	m_pDepthRGBX = new RGBQUAD[cDepthWidthV2 * cDepthHeightV2];
 }
 
 
@@ -74,12 +70,6 @@ CDepthBasics::~CDepthBasics()
 	{
 		delete m_pDrawDepth1;
 		m_pDrawDepth1 = NULL;
-	}
-
-	if (m_pDepthRGBX)
-	{
-		delete[] m_pDepthRGBX;
-		m_pDepthRGBX = NULL;
 	}
 
 	// clean up Direct2D
@@ -147,12 +137,7 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow)
 /// </summary>
 void CDepthBasics::Update()
 {
-	DepthFrameDataV2 frameDataV2;
-	HRESULT hr = m_kinectV2.GetFrame(&frameDataV2);
-	if (SUCCEEDED(hr))
-		ProcessDepth(frameDataV2);
-	m_kinectV2.ClearFrame();
-
+	m_kinectV2.Update();
 	m_kinectV1.Update();
 }
 
@@ -262,114 +247,11 @@ HRESULT CDepthBasics::InitializeDefaultSensor()
 	HRESULT hr;
 
 	hr = m_kinectV2.InitializeDefaultSensor();
+	m_kinectV2.SetImageRender(m_pDrawDepth2);
 	hr = m_kinectV1.CreateFirstConnected();
 	m_kinectV1.SetImageRender(m_pDrawDepth1);
 
 	return hr;
-}
-
-/// <summary>
-/// Handle new depth data
-/// <param name="nTime">timestamp of frame</param>
-/// <param name="pBuffer">pointer to frame data</param>
-/// <param name="nWidth">width (in pixels) of input image data</param>
-/// <param name="nHeight">height (in pixels) of input image data</param>
-/// <param name="nMinDepth">minimum reliable depth</param>
-/// <param name="nMaxDepth">maximum reliable depth</param>
-/// </summary>
-void CDepthBasics::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth)
-{
-	if (m_hWnd)
-	{
-		if (!m_nStartTime)
-		{
-			m_nStartTime = nTime;
-		}
-
-		double fps = 0.0;
-
-		LARGE_INTEGER qpcNow = { 0 };
-		if (m_fFreq)
-		{
-			if (QueryPerformanceCounter(&qpcNow))
-			{
-				if (m_nLastCounter)
-				{
-					m_nFramesSinceUpdate++;
-					fps = m_fFreq * m_nFramesSinceUpdate / double(qpcNow.QuadPart - m_nLastCounter);
-				}
-			}
-		}
-
-		WCHAR szStatusMessage[64];
-		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f    Time = %I64d", fps, (nTime - m_nStartTime));
-
-		if (SetStatusMessage(szStatusMessage, 1000, false))
-		{
-			m_nLastCounter = qpcNow.QuadPart;
-			m_nFramesSinceUpdate = 0;
-		}
-	}
-
-	// Make sure we've received valid data
-	if (m_pDepthRGBX && pBuffer && (nWidth == cDepthWidthV2) && (nHeight == cDepthHeightV2))
-	{
-		RGBQUAD* pRGBX = m_pDepthRGBX;
-
-		// end pixel is start + width*height - 1
-		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
-
-		while (pBuffer < pBufferEnd)
-		{
-			USHORT depth = *pBuffer;
-
-			// To convert to a byte, we're discarding the most-significant
-			// rather than least-significant bits.
-			// We're preserving detail, although the intensity will "wrap."
-			// Values outside the reliable depth range are mapped to 0 (black).
-
-			// Note: Using conditionals in this loop could degrade performance.
-			// Consider using a lookup table instead when writing production code.
-			BYTE intensity = static_cast<BYTE>((depth >= nMinDepth) && (depth <= nMaxDepth) ? (depth % 256) : 0);
-
-			pRGBX->rgbRed = intensity;
-			pRGBX->rgbGreen = intensity;
-			pRGBX->rgbBlue = intensity;
-
-			++pRGBX;
-			++pBuffer;
-		}
-
-		// Draw the data with Direct2D
-		m_pDrawDepth2->Draw(reinterpret_cast<BYTE*>(m_pDepthRGBX), cDepthWidthV2 * cDepthHeightV2 * sizeof(RGBQUAD));
-
-		if (m_bSaveScreenshot)
-		{
-			WCHAR szScreenshotPath[MAX_PATH];
-
-			// Retrieve the path to My Photos
-			GetScreenshotFileName(szScreenshotPath, _countof(szScreenshotPath));
-
-			// Write out the bitmap to disk
-			HRESULT hr = SaveBitmapToFile(reinterpret_cast<BYTE*>(m_pDepthRGBX), nWidth, nHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
-
-			WCHAR szStatusMessage[64 + MAX_PATH];
-			if (SUCCEEDED(hr))
-			{
-				// Set the status bar to show where the screenshot was saved
-				StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L"Screenshot saved to %s", szScreenshotPath);
-			}
-			else
-			{
-				StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L"Failed to write screenshot to %s", szScreenshotPath);
-			}
-
-			SetStatusMessage(szStatusMessage, 5000, true);
-
-			// toggle off so we don't save a screenshot again next frame
-			m_bSaveScreenshot = false;
-		}
-	}
 }
 
 /// <summary>

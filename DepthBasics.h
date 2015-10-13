@@ -80,7 +80,7 @@ private:
 	ImageRenderer*			m_pDrawDepth1;
 	ImageRenderer*          m_pDrawDepth2;
 	ID2D1Factory*           m_pD2DFactory;
-	RGBQUAD*                m_pDepthRGBX;
+	//RGBQUAD*                m_pDepthRGBX;
 
 	/// <summary>
 	/// Main processing function
@@ -93,19 +93,6 @@ private:
 	/// <returns>S_OK on success, otherwise failure code</returns>
 	HRESULT                 InitializeDefaultSensor();
 
-	/// <summary>
-	/// Handle new depth data
-	/// <param name="nTime">timestamp of frame</param>
-	/// <param name="pBuffer">pointer to frame data</param>
-	/// <param name="nWidth">width (in pixels) of input image data</param>
-	/// <param name="nHeight">height (in pixels) of input image data</param>
-	/// <param name="nMinDepth">minimum reliable depth</param>
-	/// <param name="nMaxDepth">maximum reliable depth</param>
-	/// </summary>
-	void ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nHeight, int nWidth, USHORT nMinDepth, USHORT nMaxDepth);
-	void ProcessDepth(DepthFrameDataV2& frameData) {
-		ProcessDepth(frameData.nTime, frameData.pBuffer, frameData.nWidth, frameData.nHeight, frameData.nDepthMinReliableDistance, frameData.nDepthMaxDistance);
-	}
 
 	/// <summary>
 	/// Set the status bar message
