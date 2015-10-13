@@ -4,6 +4,7 @@
     <ClCompile Include="DepthBasics.cpp" />
     <ClCompile Include="ImageRenderer.cpp" />
     <ClCompile Include="KinectV2.cpp" />
+    <ClCompile Include="KinectV1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DepthBasics.h" />
@@ -13,6 +14,7 @@
       <Filter>res</Filter>
     </ClInclude>
     <ClInclude Include="KinectV2.h" />
+    <ClInclude Include="KinectV1.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="res">

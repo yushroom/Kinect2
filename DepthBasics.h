@@ -9,11 +9,17 @@
 #include "resource.h"
 #include "ImageRenderer.h"
 #include "KinectV2.h"
+#include "KinectV1.h"
 
 class CDepthBasics
 {
-	static const int        cDepthWidth = 512;
-	static const int        cDepthHeight = 424;
+	// for V2
+	static const int        cDepthWidthV2 = 512;
+	static const int        cDepthHeightV2 = 424;
+	// for V1
+	static const int        cDepthWidthV1 = 640;
+	static const int        cDepthHeightV1 = 480;
+	static const int        cBytesPerPixel = 4;
 
 public:
 	/// <summary>
@@ -67,10 +73,12 @@ private:
 
 	// Depth reader
 	//IDepthFrameReader*      m_pDepthFrameReader;
+	KinectSensorV1			m_kinectV1;
 	KinectSensorV2			m_kinectV2;
 
 	// Direct2D
-	ImageRenderer*          m_pDrawDepth;
+	ImageRenderer*			m_pDrawDepth1;
+	ImageRenderer*          m_pDrawDepth2;
 	ID2D1Factory*           m_pD2DFactory;
 	RGBQUAD*                m_pDepthRGBX;
 

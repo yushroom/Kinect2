@@ -42,10 +42,9 @@ CDepthBasics::CDepthBasics() :
 	m_fFreq(0),
 	m_nNextStatusTime(0LL),
 	m_bSaveScreenshot(false),
-	//m_pKinectSensor(NULL),
-	//m_pDepthFrameReader(NULL),
 	m_pD2DFactory(NULL),
-	m_pDrawDepth(NULL),
+	m_pDrawDepth1(NULL),
+	m_pDrawDepth2(NULL),
 	m_pDepthRGBX(NULL)
 {
 	LARGE_INTEGER qpf = { 0 };
@@ -55,7 +54,7 @@ CDepthBasics::CDepthBasics() :
 	}
 
 	// create heap storage for depth pixel data in RGBX format
-	m_pDepthRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
+	m_pDepthRGBX = new RGBQUAD[cDepthWidthV2 * cDepthHeightV2];
 }
 
 
@@ -65,10 +64,16 @@ CDepthBasics::CDepthBasics() :
 CDepthBasics::~CDepthBasics()
 {
 	// clean up Direct2D renderer
-	if (m_pDrawDepth)
+	if (m_pDrawDepth2)
 	{
-		delete m_pDrawDepth;
-		m_pDrawDepth = NULL;
+		delete m_pDrawDepth2;
+		m_pDrawDepth2 = NULL;
+	}
+
+	if (m_pDrawDepth1)
+	{
+		delete m_pDrawDepth1;
+		m_pDrawDepth1 = NULL;
 	}
 
 	if (m_pDepthRGBX)
@@ -79,17 +84,6 @@ CDepthBasics::~CDepthBasics()
 
 	// clean up Direct2D
 	SafeRelease(m_pD2DFactory);
-
-	// done with depth frame reader
-	//SafeRelease(m_pDepthFrameReader);
-
-	//// close the Kinect Sensor
-	//if (m_pKinectSensor)
-	//{
-	//	m_pKinectSensor->Close();
-	//}
-
-	//SafeRelease(m_pKinectSensor);
 }
 
 /// <summary>
@@ -153,77 +147,13 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow)
 /// </summary>
 void CDepthBasics::Update()
 {
-	//if (!m_pDepthFrameReader)
-	//{
-	//	return;
-	//}
-
-	//IDepthFrame* pDepthFrame = NULL;
-
-	//HRESULT hr = m_pDepthFrameReader->AcquireLatestFrame(&pDepthFrame);
-
-	//if (SUCCEEDED(hr))
-	//{
-	//	INT64 nTime = 0;
-	//	IFrameDescription* pFrameDescription = NULL;
-	//	int nWidth = 0;
-	//	int nHeight = 0;
-	//	USHORT nDepthMinReliableDistance = 0;
-	//	USHORT nDepthMaxDistance = 0;
-	//	UINT nBufferSize = 0;
-	//	UINT16 *pBuffer = NULL;
-
-	//	hr = pDepthFrame->get_RelativeTime(&nTime);
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		hr = pDepthFrame->get_FrameDescription(&pFrameDescription);
-	//	}
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		hr = pFrameDescription->get_Width(&nWidth);
-	//	}
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		hr = pFrameDescription->get_Height(&nHeight);
-	//	}
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		hr = pDepthFrame->get_DepthMinReliableDistance(&nDepthMinReliableDistance);
-	//	}
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		// In order to see the full range of depth (including the less reliable far field depth)
-	//		// we are setting nDepthMaxDistance to the extreme potential depth threshold
-	//		nDepthMaxDistance = USHRT_MAX;
-
-	//		// Note:  If you wish to filter by reliable depth distance, uncomment the following line.
-	//		//// hr = pDepthFrame->get_DepthMaxReliableDistance(&nDepthMaxDistance);
-	//	}
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		hr = pDepthFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
-	//	}
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		ProcessDepth(nTime, pBuffer, nWidth, nHeight, nDepthMinReliableDistance, nDepthMaxDistance);
-	//	}
-
-	//	SafeRelease(pFrameDescription);
-	//}
-
-	//SafeRelease(pDepthFrame);
 	DepthFrameDataV2 frameDataV2;
 	HRESULT hr = m_kinectV2.GetFrame(&frameDataV2);
 	if (SUCCEEDED(hr))
 		ProcessDepth(frameDataV2);
 	m_kinectV2.ClearFrame();
+
+	m_kinectV1.Update();
 }
 
 /// <summary>
@@ -281,8 +211,15 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 
 		// Create and initialize a new Direct2D image renderer (take a look at ImageRenderer.h)
 		// We'll use this to draw the data we receive from the Kinect to the screen
-		m_pDrawDepth = new ImageRenderer();
-		HRESULT hr = m_pDrawDepth->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), m_pD2DFactory, cDepthWidth, cDepthHeight, cDepthWidth * sizeof(RGBQUAD));
+		m_pDrawDepth1 = new ImageRenderer();
+		HRESULT hr = m_pDrawDepth1->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), m_pD2DFactory, cDepthWidthV1, cDepthHeightV1, cDepthWidthV1 * sizeof(RGBQUAD));
+		if (FAILED(hr))
+		{
+			SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
+		}
+
+		m_pDrawDepth2 = new ImageRenderer();
+		hr = m_pDrawDepth2->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW2), m_pD2DFactory, cDepthWidthV2, cDepthHeightV2, cDepthWidthV2 * sizeof(RGBQUAD));
 		if (FAILED(hr))
 		{
 			SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
@@ -324,39 +261,9 @@ HRESULT CDepthBasics::InitializeDefaultSensor()
 {
 	HRESULT hr;
 
-	//hr = GetDefaultKinectSensor(&m_pKinectSensor);
-	//if (FAILED(hr))
-	//{
-	//	return hr;
-	//}
-
-	//if (m_pKinectSensor)
-	//{
-	//	// Initialize the Kinect and get the depth reader
-	//	IDepthFrameSource* pDepthFrameSource = NULL;
-
-	//	hr = m_pKinectSensor->Open();
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		hr = m_pKinectSensor->get_DepthFrameSource(&pDepthFrameSource);
-	//	}
-
-	//	if (SUCCEEDED(hr))
-	//	{
-	//		hr = pDepthFrameSource->OpenReader(&m_pDepthFrameReader);
-	//	}
-
-	//	SafeRelease(pDepthFrameSource);
-	//}
-
-	//if (!m_pKinectSensor || FAILED(hr))
-	//{
-	//	SetStatusMessage(L"No ready Kinect found!", 10000, true);
-	//	return E_FAIL;
-	//}
-
 	hr = m_kinectV2.InitializeDefaultSensor();
+	hr = m_kinectV1.CreateFirstConnected();
+	m_kinectV1.SetImageRender(m_pDrawDepth1);
 
 	return hr;
 }
@@ -405,7 +312,7 @@ void CDepthBasics::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, 
 	}
 
 	// Make sure we've received valid data
-	if (m_pDepthRGBX && pBuffer && (nWidth == cDepthWidth) && (nHeight == cDepthHeight))
+	if (m_pDepthRGBX && pBuffer && (nWidth == cDepthWidthV2) && (nHeight == cDepthHeightV2))
 	{
 		RGBQUAD* pRGBX = m_pDepthRGBX;
 
@@ -434,7 +341,7 @@ void CDepthBasics::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, 
 		}
 
 		// Draw the data with Direct2D
-		m_pDrawDepth->Draw(reinterpret_cast<BYTE*>(m_pDepthRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
+		m_pDrawDepth2->Draw(reinterpret_cast<BYTE*>(m_pDepthRGBX), cDepthWidthV2 * cDepthHeightV2 * sizeof(RGBQUAD));
 
 		if (m_bSaveScreenshot)
 		{
