@@ -13,23 +13,16 @@
 
 class CDepthBasics
 {
-	// for V2
-	static const int        cDepthWidthV2 = 512;
-	static const int        cDepthHeightV2 = 424;
-	// for V1
-	static const int        cDepthWidthV1 = 640;
-	static const int        cDepthHeightV1 = 480;
-	static const int        cBytesPerPixel = 4;
+	//// for V2
+	//static const int        cDepthWidthV2 = 512;
+	//static const int        cDepthHeightV2 = 424;
+	//// for V1
+	//static const int        cDepthWidthV1 = 640;
+	//static const int        cDepthHeightV1 = 480;
+	//static const int        cBytesPerPixel = 4;
 
 public:
-	/// <summary>
-	/// Constructor
-	/// </summary>
 	CDepthBasics();
-
-	/// <summary>
-	/// Destructor
-	/// </summary>
 	~CDepthBasics();
 
 	/// <summary>
@@ -77,9 +70,11 @@ private:
 	KinectSensorV2			m_kinectV2;
 
 	// Direct2D
-	ImageRenderer*			m_pDrawDepth1;
-	ImageRenderer*          m_pDrawDepth2;
-	ID2D1Factory*           m_pD2DFactory;
+	ImageRenderer*			m_pDrawDepth1 = nullptr;
+	ImageRenderer*          m_pDrawDepth2 = nullptr;
+	ImageRenderer*			m_pDrawInfrared1 = nullptr;
+	ImageRenderer*          m_pDrawInfrared2 = nullptr;
+	ID2D1Factory*           m_pD2DFactory = nullptr;
 	//RGBQUAD*                m_pDepthRGBX;
 
 	/// <summary>

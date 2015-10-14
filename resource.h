@@ -13,9 +13,10 @@
 #define IDC_VIDEOVIEW                   1000
 #define IDC_STATUS                      1001
 #define IDC_BUTTON_SCREENSHOT           1002
-#define IDC_VIDEOVIEW2                   2000
-#define IDC_STATUS2                      2001
-#define IDC_BUTTON_SCREENSHOT2           2002
+#define IDC_VIDEOVIEW2                  2000
+#define IDC_VIDEOVIEW3                  2001
+#define IDC_VIDEOVIEW4                  2002
+
 
 // Next default values for new objects
 // 

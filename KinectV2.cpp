@@ -5,11 +5,13 @@ KinectSensorV2::KinectSensorV2()
 {
 	// create heap storage for depth pixel data in RGBX format
 	m_pDepthRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
+	m_pInfraredRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
 }
 
 KinectSensorV2::~KinectSensorV2()
 {
 	SafeRelease(m_pDepthFrameReader);
+	SafeRelease(m_pInfraredFrameReader);
 	if (m_pKinectSensor != nullptr)
 		m_pKinectSensor->Close();
 	SafeRelease(m_pKinectSensor);
@@ -19,6 +21,13 @@ KinectSensorV2::~KinectSensorV2()
 		delete[] m_pDepthRGBX;
 		m_pDepthRGBX = NULL;
 	}
+
+	if (m_pInfraredRGBX)
+	{
+		delete[] m_pInfraredRGBX;
+		m_pInfraredRGBX = NULL;
+	}
+
 }
 
 HRESULT KinectSensorV2::InitializeDefaultSensor()
@@ -48,7 +57,20 @@ HRESULT KinectSensorV2::InitializeDefaultSensor()
 			hr = pDepthFrameSource->OpenReader(&m_pDepthFrameReader);
 		}
 
+		// Initialize the Kinect and get the infrared reader
+		IInfraredFrameSource* pInfraredFrameSource = NULL;
+		if (SUCCEEDED(hr))
+		{
+			hr = m_pKinectSensor->get_InfraredFrameSource(&pInfraredFrameSource);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pInfraredFrameSource->OpenReader(&m_pInfraredFrameReader);
+		}
+
 		SafeRelease(pDepthFrameSource);
+		SafeRelease(pInfraredFrameSource);
 	}
 
 	if (!m_pKinectSensor || FAILED(hr))
@@ -63,6 +85,10 @@ HRESULT KinectSensorV2::InitializeDefaultSensor()
 void KinectSensorV2::Update()
 {
 	if (!m_pDepthFrameReader)
+	{
+		return;
+	}
+	if (!m_pInfraredFrameReader)
 	{
 		return;
 	}
@@ -128,6 +154,54 @@ void KinectSensorV2::Update()
 	}
 
 	SafeRelease(pDepthFrame);
+
+
+	// infrared
+	IInfraredFrame* pInfraredFrame = NULL;
+
+	hr = m_pInfraredFrameReader->AcquireLatestFrame(&pInfraredFrame);
+
+	if (SUCCEEDED(hr))
+	{
+		INT64 nTime = 0;
+		IFrameDescription* pFrameDescription = NULL;
+		int nWidth = 0;
+		int nHeight = 0;
+		UINT nBufferSize = 0;
+		UINT16 *pBuffer = NULL;
+
+		hr = pInfraredFrame->get_RelativeTime(&nTime);
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pInfraredFrame->get_FrameDescription(&pFrameDescription);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Width(&nWidth);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Height(&nHeight);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pInfraredFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			ProcessInfrared(nTime, pBuffer, nWidth, nHeight);
+		}
+
+		SafeRelease(pFrameDescription);
+	}
+
+	SafeRelease(pInfraredFrame);
+
 }
 
 
@@ -163,6 +237,48 @@ void KinectSensorV2::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth
 		}
 
 		// Draw the data with Direct2D
-		m_pImageRender->Draw(reinterpret_cast<BYTE*>(m_pDepthRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
+		m_pDrawDepth->Draw(reinterpret_cast<BYTE*>(m_pDepthRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
 	}
 }
+
+void KinectSensorV2::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight)
+{
+	if (m_pInfraredRGBX && pBuffer && (nWidth == cDepthWidth) && (nHeight == cDepthHeight))
+	{
+		RGBQUAD* pDest = m_pInfraredRGBX;
+
+		// end pixel is start + width*height - 1
+		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
+
+		while (pBuffer < pBufferEnd)
+		{
+			// normalize the incoming infrared data (ushort) to a float ranging from 
+			// [InfraredOutputValueMinimum, InfraredOutputValueMaximum] by
+			// 1. dividing the incoming value by the source maximum value
+			float intensityRatio = static_cast<float>(*pBuffer) / InfraredSourceValueMaximum;
+
+			// 2. dividing by the (average scene value * standard deviations)
+			intensityRatio /= InfraredSceneValueAverage * InfraredSceneStandardDeviations;
+
+			// 3. limiting the value to InfraredOutputValueMaximum
+			intensityRatio = min(InfraredOutputValueMaximum, intensityRatio);
+
+			// 4. limiting the lower value InfraredOutputValueMinimym
+			intensityRatio = max(InfraredOutputValueMinimum, intensityRatio);
+
+			// 5. converting the normalized value to a byte and using the result
+			// as the RGB components required by the image
+			byte intensity = static_cast<byte>(intensityRatio * 255.0f);
+			pDest->rgbRed = intensity;
+			pDest->rgbGreen = intensity;
+			pDest->rgbBlue = intensity;
+
+			++pDest;
+			++pBuffer;
+		}
+
+		// Draw the data with Direct2D
+		m_pDrawInfrared->Draw(reinterpret_cast<BYTE*>(m_pInfraredRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
+	}
+}
+

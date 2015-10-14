@@ -72,6 +72,19 @@ CDepthBasics::~CDepthBasics()
 		m_pDrawDepth1 = NULL;
 	}
 
+	if (m_pDrawInfrared1)
+	{
+		delete m_pDrawInfrared1;
+		m_pDrawInfrared1 = NULL;
+	}
+
+	if (m_pDrawInfrared2)
+	{
+		delete m_pDrawInfrared2;
+		m_pDrawInfrared2 = NULL;
+	}
+
+
 	// clean up Direct2D
 	SafeRelease(m_pD2DFactory);
 }
@@ -197,14 +210,24 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 		// Create and initialize a new Direct2D image renderer (take a look at ImageRenderer.h)
 		// We'll use this to draw the data we receive from the Kinect to the screen
 		m_pDrawDepth1 = new ImageRenderer();
-		HRESULT hr = m_pDrawDepth1->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), m_pD2DFactory, cDepthWidthV1, cDepthHeightV1, cDepthWidthV1 * sizeof(RGBQUAD));
+		int w = KinectSensorV1::cDepthWidth, h = KinectSensorV1::cDepthHeight;
+		HRESULT hr = m_pDrawDepth1->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), m_pD2DFactory, w, h, w * sizeof(RGBQUAD));
 		if (FAILED(hr))
 		{
 			SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
 		}
 
+		w = KinectSensorV2::cDepthWidth;
+		h = KinectSensorV2::cDepthHeight;
 		m_pDrawDepth2 = new ImageRenderer();
-		hr = m_pDrawDepth2->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW2), m_pD2DFactory, cDepthWidthV2, cDepthHeightV2, cDepthWidthV2 * sizeof(RGBQUAD));
+		hr = m_pDrawDepth2->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW2), m_pD2DFactory, w, h, w * sizeof(RGBQUAD));
+		if (FAILED(hr))
+		{
+			SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
+		}
+
+		m_pDrawInfrared2 = new ImageRenderer();
+		hr = m_pDrawInfrared2->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW4), m_pD2DFactory, w, h, w * sizeof(RGBQUAD));
 		if (FAILED(hr))
 		{
 			SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
@@ -247,7 +270,7 @@ HRESULT CDepthBasics::InitializeDefaultSensor()
 	HRESULT hr;
 
 	hr = m_kinectV2.InitializeDefaultSensor();
-	m_kinectV2.SetImageRender(m_pDrawDepth2);
+	m_kinectV2.SetImageRender(m_pDrawDepth2, m_pDrawInfrared2);
 	hr = m_kinectV1.CreateFirstConnected();
 	m_kinectV1.SetImageRender(m_pDrawDepth1);
 
