@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "ImageRenderer.h"
+#include "RenderFish.hpp"
 
 // InfraredSourceValueMaximum is the highest value that can be returned in the InfraredFrame.
 // It is cast to a float for readability in the visualization code.
@@ -50,6 +51,12 @@ class KinectSensorV2
 public:
 	static const int        cDepthWidth = 512;
 	static const int        cDepthHeight = 424;
+	static const float		fovx;
+	static const float		fovy;
+
+	vector<UINT16>			rawDepthData;
+	vector<BYTE>			rawInfraredData;
+	RGBQUAD*                m_pInfraredRGBX = nullptr;
 
 private:
 	// Current Kinect
@@ -63,7 +70,6 @@ private:
 	IFrameDescription*		pFrameDescription	= NULL;
 
 	RGBQUAD*                m_pDepthRGBX	= nullptr;
-	RGBQUAD*                m_pInfraredRGBX = nullptr;
 	ImageRenderer*			m_pDrawDepth	= nullptr;
 	ImageRenderer*          m_pDrawInfrared = nullptr;
 
@@ -100,5 +106,13 @@ public:
 	/// <param name="nHeight">height (in pixels) of input image data</param>
 	/// </summary>
 	void ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight);
+
+	const RGBQUAD* GetDepthBuffer() const {
+		return m_pDepthRGBX;
+	}
+
+	const RGBQUAD* GetInfraredBuffer() const {
+		return m_pInfraredRGBX;
+	}
 
 };

@@ -1,5 +1,6 @@
 #include "KinectV2.h"
 #include "C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc\Kinect.h"
+#include <cassert>
 
 KinectSensorV2::KinectSensorV2()
 {
@@ -109,10 +110,16 @@ void KinectSensorV2::Update()
 		UINT16 *pBuffer = NULL;
 
 		hr = pDepthFrame->get_RelativeTime(&nTime);
-
+		
+		float fovx, fovy;
 		if (SUCCEEDED(hr))
 		{
 			hr = pDepthFrame->get_FrameDescription(&pFrameDescription);
+			pFrameDescription->get_HorizontalFieldOfView(&fovx);
+			pFrameDescription->get_VerticalFieldOfView(&fovy);
+
+			assert(fabsf(fovx - fovx) < 1e-6f);
+			assert(fabsf(fovy - fovy) < 1e-6f);
 		}
 
 		if (SUCCEEDED(hr))
@@ -210,11 +217,15 @@ void KinectSensorV2::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth
 	// Make sure we've received valid data
 	if (m_pDepthRGBX && pBuffer && (nWidth == cDepthWidth) && (nHeight == cDepthHeight))
 	{
+		
+
 		RGBQUAD* pRGBX = m_pDepthRGBX;
 
 		// end pixel is start + width*height - 1
 		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
-
+		
+		rawDepthData = vector<UINT16>(pBuffer, pBufferEnd);
+		
 		while (pBuffer < pBufferEnd)
 		{
 			USHORT depth = *pBuffer;
@@ -250,6 +261,8 @@ void KinectSensorV2::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWi
 		// end pixel is start + width*height - 1
 		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
 
+		rawInfraredData.clear();
+
 		while (pBuffer < pBufferEnd)
 		{
 			// normalize the incoming infrared data (ushort) to a float ranging from 
@@ -269,6 +282,9 @@ void KinectSensorV2::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWi
 			// 5. converting the normalized value to a byte and using the result
 			// as the RGB components required by the image
 			byte intensity = static_cast<byte>(intensityRatio * 255.0f);
+
+			rawInfraredData.push_back(intensity);
+
 			pDest->rgbRed = intensity;
 			pDest->rgbGreen = intensity;
 			pDest->rgbBlue = intensity;
@@ -281,4 +297,8 @@ void KinectSensorV2::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWi
 		m_pDrawInfrared->Draw(reinterpret_cast<BYTE*>(m_pInfraredRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
 	}
 }
+
+const float KinectSensorV2::fovx = 70.6f;
+
+const float KinectSensorV2::fovy = 60;
 

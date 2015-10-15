@@ -20,9 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DepthBasics.cpp" />
+    <ClCompile Include="Error.cpp" />
     <ClCompile Include="ImageRenderer.cpp" />
     <ClCompile Include="KinectV1.cpp" />
     <ClCompile Include="KinectV2.cpp" />
+    <ClCompile Include="Math.cpp" />
+    <ClCompile Include="Matrix4x4.cpp" />
+    <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="app.ico" />
@@ -32,11 +36,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DepthBasics.h" />
+    <ClInclude Include="Error.hpp" />
     <ClInclude Include="ImageRenderer.h" />
     <ClInclude Include="KinectV1.h" />
     <ClInclude Include="KinectV2.h" />
+    <ClInclude Include="Math.hpp" />
+    <ClInclude Include="MathHelper.hpp" />
+    <ClInclude Include="Matrix4x4.hpp" />
+    <ClInclude Include="RenderFish.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Vector.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4556CB68-B48D-4C18-B29D-032B06DC7E8C}</ProjectGuid>

@@ -60,6 +60,7 @@ private:
 	INT64                   m_nNextStatusTime;
 	DWORD                   m_nFramesSinceUpdate;
 	bool                    m_bSaveScreenshot;
+	int					m_nScreenShotCount = 0;
 
 	// Current Kinect
 	//IKinectSensor*          m_pKinectSensor;
@@ -108,7 +109,7 @@ private:
 	HRESULT                 GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, UINT nFilePathSize);
 
 	/// <summary>
-	/// Save passed in image data to disk as a bitmap
+	/// Save passed in image data to disk as a bitmap b 
 	/// </summary>
 	/// <param name="pBitmapBits">image data to save</param>
 	/// <param name="lWidth">width (in pixels) of input image data</param>
@@ -117,5 +118,8 @@ private:
 	/// <param name="lpszFilePath">full file path to output bitmap to</param>
 	/// <returns>indicates success or failure</returns>
 	HRESULT                 SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
+
+	void GeneratePointCloud();
+	void SaveInfraredImage();
 };
 

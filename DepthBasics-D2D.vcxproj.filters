@@ -5,6 +5,18 @@
     <ClCompile Include="ImageRenderer.cpp" />
     <ClCompile Include="KinectV2.cpp" />
     <ClCompile Include="KinectV1.cpp" />
+    <ClCompile Include="Vector.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix4x4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Error.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DepthBasics.h" />
@@ -15,10 +27,31 @@
     </ClInclude>
     <ClInclude Include="KinectV2.h" />
     <ClInclude Include="KinectV1.h" />
+    <ClInclude Include="Vector.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix4x4.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="MathHelper.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Error.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderFish.hpp">
+      <Filter>Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="res">
       <UniqueIdentifier>{b66c2128-6fda-49d7-9105-2d4f5c147dae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{16bf3dfb-c736-4fc1-a250-86b31735875c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

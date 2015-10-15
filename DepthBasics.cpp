@@ -5,9 +5,19 @@
 //------------------------------------------------------------------------------
 
 #include "stdafx.h"
+#include <stdio.h>
 #include <strsafe.h>
+#include <sstream>
 #include "resource.h"
 #include "DepthBasics.h"
+#include "RenderFish.hpp"
+#include "Math.hpp"
+#include "NuiApi.h"
+
+#define IR_FX (387.56565394355408)
+#define IR_FY (387.43950296593346)
+#define IR_CX (259.15112583019447)
+#define IR_CY (206.03282313805542)
 
 /// <summary>
 /// Entry point for the application
@@ -26,6 +36,8 @@ int APIENTRY wWinMain(
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
+	
+	log_system_init();
 
 	CDepthBasics application;
 	application.Run(hInstance, nShowCmd);
@@ -131,6 +143,10 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow)
 
 		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
 		{
+			if (msg.message == WM_KEYDOWN)
+			{
+				info("key down\n");
+			}
 			// If a dialog message will be taken care of by the dialog proc
 			if (hWndApp && IsDialogMessageW(hWndApp, &msg))
 			{
@@ -152,6 +168,12 @@ void CDepthBasics::Update()
 {
 	m_kinectV2.Update();
 	m_kinectV1.Update();
+
+	if (m_bSaveScreenshot) {
+
+		GeneratePointCloud();
+		m_bSaveScreenshot = false;
+	}
 }
 
 /// <summary>
@@ -217,6 +239,13 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 			SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
 		}
 
+		m_pDrawInfrared1 = new ImageRenderer();
+		hr = m_pDrawInfrared1->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW3), m_pD2DFactory, w, h, w * sizeof(RGBQUAD));
+		if (FAILED(hr))
+		{
+			SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
+		}
+
 		w = KinectSensorV2::cDepthWidth;
 		h = KinectSensorV2::cDepthHeight;
 		m_pDrawDepth2 = new ImageRenderer();
@@ -248,11 +277,29 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 		PostQuitMessage(0);
 		break;
 
+	case WM_KEYDOWN:
+	{
+		switch (wParam)
+		{
+		case VK_ESCAPE:
+			SendMessage(hWnd, WM_CLOSE, 0, 0);
+			break;
+		case VK_RETURN:
+			info("print\n");
+			break;
+		default:
+			break;
+		}
+	}
+	break;
+
 		// Handle button press
 	case WM_COMMAND:
 		// If it was for the screenshot control and a button clicked event, save a screenshot next frame 
 		if (IDC_BUTTON_SCREENSHOT == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam))
 		{
+			info("button clicked\n");
+			SetStatusMessage(L"button clicked", 10000, true);
 			m_bSaveScreenshot = true;
 		}
 		break;
@@ -272,7 +319,7 @@ HRESULT CDepthBasics::InitializeDefaultSensor()
 	hr = m_kinectV2.InitializeDefaultSensor();
 	m_kinectV2.SetImageRender(m_pDrawDepth2, m_pDrawInfrared2);
 	hr = m_kinectV1.CreateFirstConnected();
-	m_kinectV1.SetImageRender(m_pDrawDepth1);
+	m_kinectV1.SetImageRender(m_pDrawDepth1, m_pDrawInfrared1);
 
 	return hr;
 }
@@ -393,4 +440,131 @@ HRESULT CDepthBasics::SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHei
 	// Close the file
 	CloseHandle(hFile);
 	return S_OK;
+}
+
+typedef Vec3 vector3f;
+typedef UINT16 DepthType;
+typedef BYTE InfraredType;
+
+inline vector3f unproject(const int x, const int y, const float fx, const float fy, const float cx, const float cy) {
+	float zz = 1.f;
+	float xx = (x - cx) / fx * zz;
+	float yy = (y - cy) / fy * zz;
+	return{ xx, yy, zz };
+}
+
+inline void calc_points(const vector<DepthType>& depth_pixels, const vector<BYTE>& infrared_pixels, vector<vector3f>& point_cloud, int width, int height,
+	const float fovx, const float fovy)
+//inline void calc_points(const UINT16* depth_pixels, const UINT16* infrared_pixels, vector<vector3f>& point_cloud, int width, int height,
+//	const float fx, const float fy, const float cx, const float cy)
+{
+	//Assert(depth_pixels.size() == width * height);
+	//point_cloud.resize(width*height);
+	//for (int i = 0; i < depth_pixels.size(); i++) {
+	//	int w = i % width;
+	//	int h = i / width;
+	//	h = height - 1 - h;
+	//	point_cloud[i] = /*unproject(w, h, fx, fy, cx, cy) **/ depth_pixels[i];
+	//}
+
+	point_cloud.resize(width*height);
+	const float DegreesToRadians = 3.14159265359f / 180.0f;
+	const float xScale = tanf(fovx * DegreesToRadians * 0.5f) * 2.0f / width;
+	const float yScale = tanf(fovy * DegreesToRadians * 0.5f) * 2.0f / height;
+	int	half_width = width / 2;
+	int	half_height = height / 2;
+	for (int j = 0; j < height; j++){
+		for (int i = 0; i < width; i++){
+			int idx = j*width + i;
+			unsigned short pixel_depth = depth_pixels[idx];
+			float	depth = -pixel_depth * 0.001;	//	unit in meters
+
+			//auto pos = NuiTransformDepthImageToSkeleton(i, j, pixel_depth, NUI_IMAGE_RESOLUTION_640x480);
+			//point_cloud[idx].x = pos.x / pos.w;
+			//point_cloud[idx].y = pos.y / pos.w;
+			//point_cloud[idx].z = pos.z / pos.w;
+
+			//point_cloud[idx].x= -(i + 0.5 - half_width) * xyScale * depth;
+			//point_cloud[idx].y = (j + 0.5 - half_height) * xyScale * depth;
+			//point_cloud[idx].z = depth;		//	in OpenGL coordinate
+
+			point_cloud[idx].x = -(i + 0.5f - half_width) * xScale * depth;
+			point_cloud[idx].y = (j  + 0.5f - half_height) * yScale * depth;
+			point_cloud[idx].z = depth;
+		}
+	}
+
+	return;
+}
+
+inline void writePly(const vector<vector3f>& point_cloud, const vector<BYTE>& infrared_pixels, const char *filename)
+//inline void writePly(const vector<vector3f>& point_cloud, const RGBQUAD* infrared_pixels, const char *filename)
+{
+	FILE *fp;
+	fopen_s(&fp, filename, "w");
+	fprintf(fp, "ply\n");
+	fprintf(fp, "format ascii 1.0\n");
+	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
+	fprintf(fp, "element vertex %d\n", point_cloud.size());
+	fprintf(fp, "property float x\n");
+	fprintf(fp, "property float y\n");
+	fprintf(fp, "property float z\n");
+	fprintf(fp, "property uchar red\n");
+	fprintf(fp, "property uchar green\n");
+	fprintf(fp, "property uchar blue\n");
+	fprintf(fp, "element face 0\n");
+	fprintf(fp, "property list uchar int vertex_index\n");
+	fprintf(fp, "end_header\n");
+
+	for (int i = 0; i < point_cloud.size(); i++) {
+		fprintf_s(fp, "%f %f %f %d %d %d\n", point_cloud[i].x, point_cloud[i].y, point_cloud[i].z, infrared_pixels[i], infrared_pixels[i], infrared_pixels[i]);
+		//fprintf_s(fp, "%f %f %f %d %d %d\n", point_cloud[i].x, point_cloud[i].y, point_cloud[i].z, 255, 255, 255);
+	}
+	fclose(fp);
+}
+#define PREFIX				"D:\\yyk\\ply"
+//#define POINTCLOUND1			PREFIX "a_.ply"
+//#define POINTCLOUND2			PREFIX "b_point2.ply"
+#define IMAGE_PATH_PREFIX_A		"D:\\yyk\\image"
+#define IMAGE_PATH_PREFIX_W		L"D:\\yyk\\image"
+
+void CDepthBasics::GeneratePointCloud()
+{
+#if 0
+	vector<vector3f> points_und1;
+	calc_points(m_kinectV1.rawDepthData, m_kinectV1.rawInfraredData, points_und1, KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight,
+		KinectSensorV1::fovx, KinectSensorV1::fovy);
+
+	char path[MAX_PATH];
+
+	sprintf(path, "%s\\a_%04d.ply", PREFIX, m_nScreenShotCount);
+
+	writePly(points_und1, m_kinectV1.rawInfraredData, path);
+	info("save file to %s\n", path);
+
+	vector<vector3f> points_und;
+	calc_points(m_kinectV2.rawDepthData, m_kinectV2.rawInfraredData, points_und, KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight,
+		KinectSensorV2::fovx, KinectSensorV2::fovy);
+
+	sprintf(path, "%s\\b_%04d.ply", PREFIX, m_nScreenShotCount);
+
+	writePly(points_und, m_kinectV2.rawInfraredData, path);
+	info("save file to %s\n", path);
+#endif
+	SaveInfraredImage();
+}
+
+void CDepthBasics::SaveInfraredImage()
+{
+	WCHAR szScreenshotPath[MAX_PATH];
+	wsprintf(szScreenshotPath, L"%s\\a_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
+	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_pTempColorBuffer), KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
+	info("save file to %s\\a_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
+
+#if 0
+	wsprintf(szScreenshotPath, L"%s\\b_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
+	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pInfraredRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
+	info("save file to %s\\b_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
+#endif
+	m_nScreenShotCount++;
 }
