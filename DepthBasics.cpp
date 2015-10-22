@@ -8,16 +8,25 @@
 #include <stdio.h>
 #include <strsafe.h>
 #include <sstream>
+#include <fstream>
 #include "resource.h"
 #include "DepthBasics.h"
 #include "RenderFish.hpp"
 #include "Math.hpp"
 #include "NuiApi.h"
 
+using namespace std;
+
 #define IR_FX (387.56565394355408)
 #define IR_FY (387.43950296593346)
 #define IR_CX (259.15112583019447)
 #define IR_CY (206.03282313805542)
+
+#define PREFIX				"D:\\yyk\\ply"
+//#define POINTCLOUND1			PREFIX "a_.ply"
+//#define POINTCLOUND2			PREFIX "b_point2.ply"
+#define IMAGE_PATH_PREFIX_A		"D:\\yyk\\image"
+#define IMAGE_PATH_PREFIX_W		L"D:\\yyk\\image"
 
 /// <summary>
 /// Entry point for the application
@@ -156,6 +165,8 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow)
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
+
+
 	}
 
 	return static_cast<int>(msg.wParam);
@@ -174,6 +185,8 @@ void CDepthBasics::Update()
 		GeneratePointCloud();
 		m_bSaveScreenshot = false;
 	}
+
+	//m_nFramesSinceUpdate++;
 }
 
 /// <summary>
@@ -353,25 +366,31 @@ bool CDepthBasics::SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMsec
 /// <returns>
 /// S_OK on success, otherwise failure code.
 /// </returns>
-HRESULT CDepthBasics::GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, UINT nFilePathSize)
+HRESULT CDepthBasics::GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, LPWSTR lpszFilePath_depth, UINT nFilePathSize, int kinect_version)
 {
-	WCHAR* pszKnownPath = NULL;
-	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Pictures, 0, NULL, &pszKnownPath);
-
+	WCHAR* pszKnownPath = IMAGE_PATH_PREFIX_W;
+	//HRESULT hr = SHGetKnownFolderPath(FOLDERID_Pictures, 0, NULL, &pszKnownPath);
+	HRESULT hr = S_OK;
 	if (SUCCEEDED(hr))
 	{
 		// Get the time
 		WCHAR szTimeString[MAX_PATH];
 		GetTimeFormatEx(NULL, 0, NULL, L"hh'-'mm'-'ss", szTimeString, _countof(szTimeString));
 
-		// File name will be KinectScreenshotDepth-HH-MM-SS.bmp
-		StringCchPrintfW(lpszFilePath, nFilePathSize, L"%s\\KinectScreenshot-Depth-%s.bmp", pszKnownPath, szTimeString);
+		if (kinect_version == 1) {
+			StringCchPrintfW(lpszFilePath, nFilePathSize, L"%s\\a-%s-%d.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath_depth, nFilePathSize, L"%s\\a-%s-%d-depth.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
+		}
+		else{
+			StringCchPrintfW(lpszFilePath, nFilePathSize, L"%s\\b-%s-%d.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath_depth, nFilePathSize, L"%s\\b-%s-%d-depth.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
+		}
 	}
 
-	if (pszKnownPath)
-	{
-		CoTaskMemFree(pszKnownPath);
-	}
+	//if (pszKnownPath)
+	//{
+	//	CoTaskMemFree(pszKnownPath);
+	//}
 
 	return hr;
 }
@@ -522,11 +541,7 @@ inline void writePly(const vector<vector3f>& point_cloud, const vector<BYTE>& in
 	}
 	fclose(fp);
 }
-#define PREFIX				"D:\\yyk\\ply"
-//#define POINTCLOUND1			PREFIX "a_.ply"
-//#define POINTCLOUND2			PREFIX "b_point2.ply"
-#define IMAGE_PATH_PREFIX_A		"D:\\yyk\\image"
-#define IMAGE_PATH_PREFIX_W		L"D:\\yyk\\image"
+
 
 void CDepthBasics::GeneratePointCloud()
 {
@@ -554,17 +569,35 @@ void CDepthBasics::GeneratePointCloud()
 	SaveInfraredImage();
 }
 
+// uint16
+void sava_raw_depth(vector<UINT16> raw_depth, int size, const char* filename) {
+	ofstream os(filename, ios::binary);
+	os.write((char*)&raw_depth[0], size * sizeof(UINT16));
+	os.close();
+}
+
 void CDepthBasics::SaveInfraredImage()
 {
 	WCHAR szScreenshotPath[MAX_PATH];
-	wsprintf(szScreenshotPath, L"%s\\a_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
+	WCHAR szScreenshotPath_depth[MAX_PATH];
+#if 1
+	//wsprintf(szScreenshotPath, L"%s\\a_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
+	GetScreenshotFileName(szScreenshotPath, szScreenshotPath_depth, _countof(szScreenshotPath), 1);
 	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_pTempColorBuffer), KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
-	info("save file to %s\\a_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
+	SaveBitmapToFile(m_kinectV1.m_depthRGBX, KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath_depth);
+	info("image a saved.\n");
+	sava_raw_depth(m_kinectV1.rawDepthData, KinectSensorV1::cDepthWidth * KinectSensorV1::cDepthHeight, "d:\\yyk\\image\\k1_depth.bin");
+	//info("save file to %s\\a_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
 
-#if 0
-	wsprintf(szScreenshotPath, L"%s\\b_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
+#endif
+#if 1
+	//wsprintf(szScreenshotPath, L"%s\\b_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
+	GetScreenshotFileName(szScreenshotPath, szScreenshotPath_depth, _countof(szScreenshotPath), 2);
 	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pInfraredRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
-	info("save file to %s\\b_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
+	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pDepthRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath_depth);
+	//info("save file to %s\\b_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
+	info("image b saved.\n");
+	sava_raw_depth(m_kinectV2.rawDepthData, KinectSensorV2::cDepthWidth * KinectSensorV2::cDepthHeight, "d:\\yyk\\image\\k2_depth.bin");
 #endif
 	m_nScreenShotCount++;
 }

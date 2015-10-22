@@ -18,6 +18,9 @@ public:
 	vector<BYTE>			rawInfraredData;
 
 	RGBQUAD*                m_pTempColorBuffer = nullptr;
+	BYTE*                   m_depthRGBX = nullptr;
+
+	bool flip = true;
 
 private:
 	INuiSensor*             m_pNuiSensor			= NULL;
@@ -29,13 +32,11 @@ private:
 	ImageRenderer*			m_pDrawDepth			= nullptr;
 	ImageRenderer*			m_pDrawColor			= nullptr;
 
-	BYTE*                   m_depthRGBX	= nullptr;
-	
-
 public:
 	KinectSensorV1() {
 		m_depthRGBX = new BYTE[cDepthWidth*cDepthHeight*cBytesPerPixel];
 		m_pTempColorBuffer = new RGBQUAD[cDepthWidth * cDepthHeight];
+		rawDepthData.resize(cDepthWidth * cDepthHeight);
 	}
 	~KinectSensorV1();
 

@@ -1,0 +1,244 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{944B30A3-906F-31BB-8E61-FC065E86601A}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>(EXAMPLE) calibration</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\bin\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">example_calibration.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cpp-example-calibration</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\bin\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">example_calibration.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cpp-example-calibration</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\video\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgproc\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\core\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\hal\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\calib3d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\features2d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\highgui\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videoio\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgcodecs\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\photo\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\ml\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\flann\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\objdetect\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\shape\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videostab\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\stitching\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4251;4324</DisableSpecificWarnings>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ProcessorNumber>8</ProcessorNumber>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_DEBUG;_VARIADIC_MAX=10;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_DEBUG;_VARIADIC_MAX=10;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\video\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgproc\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\core\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\hal\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\calib3d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\features2d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\highgui\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videoio\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgcodecs\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\photo\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\ml\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\flann\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\objdetect\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\shape\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videostab\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\stitching\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\video\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgproc\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\core\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\hal\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\calib3d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\features2d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\highgui\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videoio\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgcodecs\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\photo\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\ml\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\flann\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\objdetect\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\shape\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videostab\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\stitching\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalOptions> /machine:x64 /debug %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\..\..\3rdparty\ippicv\unpack\ippicv_win\lib\intel64\ippicvmt.lib;..\..\lib\Debug\opencv_stitching300d.lib;..\..\lib\Debug\opencv_videostab300d.lib;..\..\lib\Debug\opencv_shape300d.lib;..\..\lib\Debug\opencv_objdetect300d.lib;..\..\lib\Debug\opencv_photo300d.lib;..\..\lib\Debug\opencv_calib3d300d.lib;..\..\lib\Debug\opencv_features2d300d.lib;..\..\lib\Debug\opencv_flann300d.lib;..\..\lib\Debug\opencv_highgui300d.lib;..\..\lib\Debug\opencv_videoio300d.lib;..\..\lib\Debug\opencv_imgcodecs300d.lib;..\..\lib\Debug\opencv_ml300d.lib;..\..\lib\Debug\opencv_video300d.lib;..\..\lib\Debug\opencv_imgproc300d.lib;..\..\lib\Debug\opencv_core300d.lib;..\..\lib\Debug\opencv_hal300d.lib;..\..\..\3rdparty\ippicv\unpack\ippicv_win\lib\intel64\ippicvmt.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/bin/Debug/cpp-example-calibration.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/bin/Debug/cpp-example-calibration.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+      <Version>
+      </Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\video\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgproc\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\core\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\hal\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\calib3d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\features2d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\highgui\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videoio\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgcodecs\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\photo\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\ml\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\flann\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\objdetect\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\shape\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videostab\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\stitching\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4251;4324</DisableSpecificWarnings>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ProcessorNumber>8</ProcessorNumber>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;NDEBUG;_VARIADIC_MAX=10;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;NDEBUG;_VARIADIC_MAX=10;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\video\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgproc\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\core\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\hal\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\calib3d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\features2d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\highgui\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videoio\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgcodecs\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\photo\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\ml\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\flann\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\objdetect\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\shape\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videostab\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\stitching\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\video\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgproc\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\core\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\hal\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\calib3d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\features2d\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\highgui\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videoio\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\imgcodecs\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\photo\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\ml\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\flann\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\objdetect\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\shape\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\videostab\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\modules\stitching\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\include;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalOptions> /machine:x64 /debug %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\..\..\3rdparty\ippicv\unpack\ippicv_win\lib\intel64\ippicvmt.lib;..\..\lib\Release\opencv_stitching300.lib;..\..\lib\Release\opencv_videostab300.lib;..\..\lib\Release\opencv_shape300.lib;..\..\lib\Release\opencv_objdetect300.lib;..\..\lib\Release\opencv_photo300.lib;..\..\lib\Release\opencv_calib3d300.lib;..\..\lib\Release\opencv_features2d300.lib;..\..\lib\Release\opencv_flann300.lib;..\..\lib\Release\opencv_highgui300.lib;..\..\lib\Release\opencv_videoio300.lib;..\..\lib\Release\opencv_imgcodecs300.lib;..\..\lib\Release\opencv_ml300.lib;..\..\lib\Release\opencv_video300.lib;..\..\lib\Release\opencv_imgproc300.lib;..\..\lib\Release\opencv_core300.lib;..\..\lib\Release\opencv_hal300.lib;..\..\..\3rdparty\ippicv\unpack\ippicv_win\lib\intel64\ippicvmt.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/bin/Release/cpp-example-calibration.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/bin/Release/cpp-example-calibration.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+      <Version>
+      </Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\yyk\workspace\library\opencv_3_0\opencv\sources\samples\cpp\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/yyk/workspace/library/opencv_3_0/opencv/sources/samples/cpp/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\yyk\cmake-3.4.0-rc1-win32-x86\bin\cmake.exe -HD:/yyk/workspace/library/opencv_3_0/opencv/sources -BD:/yyk/workspace/library/opencv_3_0/opencv/sources/build --check-stamp-file D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\samples\cpp\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:/yyk/workspace/library/opencv_3_0/opencv/sources/samples/cpp/CMakeLists.txt;D:\yyk\workspace\library\opencv_3_0\opencv\sources\samples\cpp\CMakeLists.txt;D:\yyk\workspace\library\opencv_3_0\opencv\sources\samples\cpp\tutorial_code\calib3d\real_time_pose_estimation\CMakeLists.txt;D:\yyk\workspace\library\opencv_3_0\opencv\sources\samples\cpp\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\samples\cpp\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/yyk/workspace/library/opencv_3_0/opencv/sources/samples/cpp/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\yyk\cmake-3.4.0-rc1-win32-x86\bin\cmake.exe -HD:/yyk/workspace/library/opencv_3_0/opencv/sources -BD:/yyk/workspace/library/opencv_3_0/opencv/sources/build --check-stamp-file D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\samples\cpp\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:/yyk/workspace/library/opencv_3_0/opencv/sources/samples/cpp/CMakeLists.txt;D:\yyk\workspace\library\opencv_3_0\opencv\sources\samples\cpp\CMakeLists.txt;D:\yyk\workspace\library\opencv_3_0\opencv\sources\samples\cpp\tutorial_code\calib3d\real_time_pose_estimation\CMakeLists.txt;D:\yyk\workspace\library\opencv_3_0\opencv\sources\samples\cpp\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\samples\cpp\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="calibration.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/ZERO_CHECK.vcxproj">
+      <Project>217842AA-986F-3805-90CE-DB4343C1937F</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/calib3d/opencv_calib3d.vcxproj">
+      <Project>A0A64631-03EC-3886-A4FF-462DFC8067CD</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/core/opencv_core.vcxproj">
+      <Project>F70B9712-D5F9-3EE7-B7CE-1DC0322A3E0C</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/features2d/opencv_features2d.vcxproj">
+      <Project>7195F23C-C922-3A67-9466-5D7EE438AB12</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/flann/opencv_flann.vcxproj">
+      <Project>C0777DFE-682D-338B-BCFE-53493C2C5069</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/hal/opencv_hal.vcxproj">
+      <Project>18E597B9-46A5-38A7-9658-02B8E352BAA2</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/highgui/opencv_highgui.vcxproj">
+      <Project>E0CF95E0-B102-3747-85B7-5D6D7C9AC34C</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/imgcodecs/opencv_imgcodecs.vcxproj">
+      <Project>44AF2A8A-265A-33CB-B229-087252B25DF3</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/imgproc/opencv_imgproc.vcxproj">
+      <Project>2DD6BAC6-82EC-398E-A89A-32AA00194AC5</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/ml/opencv_ml.vcxproj">
+      <Project>CB759D11-8063-36F2-BEFD-8BACB3CF53EA</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/objdetect/opencv_objdetect.vcxproj">
+      <Project>877A6343-46E6-3C6B-9BBD-F225EDBBC131</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/photo/opencv_photo.vcxproj">
+      <Project>D54E1E78-74C4-3554-A104-247676A5AB81</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/shape/opencv_shape.vcxproj">
+      <Project>BA6FCBD4-3C1F-3DE4-B902-22F5BC737D9E</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/stitching/opencv_stitching.vcxproj">
+      <Project>E14412DB-EA73-3B32-8E8D-77C5D4FBDC20</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/video/opencv_video.vcxproj">
+      <Project>B89DB411-1F55-37DF-A16E-36510ABFC1C8</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/videoio/opencv_videoio.vcxproj">
+      <Project>F29457D6-142B-3CAF-893F-B684F8AE6167</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/yyk/workspace/library/opencv_3_0/opencv/sources/build/modules/videostab/opencv_videostab.vcxproj">
+      <Project>82D8345E-BE8B-3E15-83DC-D05EFDC5F062</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

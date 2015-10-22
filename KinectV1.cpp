@@ -76,6 +76,8 @@ void KinectSensorV1::ProcessDepth()
 	// Lock the frame data so the Kinect knows not to modify it while we're reading it
 	pTexture->LockRect(0, &LockedRect, NULL, 0);
 
+
+
 	// Make sure we've received valid data
 	if (LockedRect.Pitch != 0)
 	{
@@ -84,18 +86,31 @@ void KinectSensorV1::ProcessDepth()
 		int maxDepth = (nearMode ? NUI_IMAGE_DEPTH_MAXIMUM_NEAR_MODE : NUI_IMAGE_DEPTH_MAXIMUM) >> NUI_IMAGE_PLAYER_INDEX_SHIFT;
 
 		BYTE * rgbrun = m_depthRGBX;
+		if (flip) {
+			rgbrun = m_depthRGBX + (cDepthWidth * cDepthHeight * cBytesPerPixel) - 1;
+		}
 		const NUI_DEPTH_IMAGE_PIXEL * pBufferRun = reinterpret_cast<const NUI_DEPTH_IMAGE_PIXEL *>(LockedRect.pBits);
 
 		// end pixel is start + width*height - 1
 		const NUI_DEPTH_IMAGE_PIXEL * pBufferEnd = pBufferRun + (cDepthWidth * cDepthHeight);
 
-		rawDepthData.clear();
+		//rawDepthData.clear();
+		//rawDepthData.reserve(cDepthWidth * cDepthHeight);
+		int raw_depth_data_idx = 0;
+		if (flip) {
+			raw_depth_data_idx = cDepthWidth * cDepthHeight-1;
+		}
 
 		while (pBufferRun < pBufferEnd)
 		{
 			// discard the portion of the depth that contains only the player index
 			USHORT depth = pBufferRun->depth;
-			rawDepthData.push_back(depth);
+			if (flip) {
+				rawDepthData[raw_depth_data_idx--] = depth;
+			}
+			else {
+				rawDepthData[raw_depth_data_idx++] = depth;
+			}
 
 			// To convert to a byte, we're discarding the most-significant
 			// rather than least-significant bits.
@@ -106,18 +121,23 @@ void KinectSensorV1::ProcessDepth()
 			// Consider using a lookup table instead when writing production code.
 			BYTE intensity = static_cast<BYTE>(depth >= minDepth && depth <= maxDepth ? depth % 256 : 0);
 
-			// Write out blue byte
-			*(rgbrun++) = intensity;
-
-			// Write out green byte
-			*(rgbrun++) = intensity;
-
-			// Write out red byte
-			*(rgbrun++) = intensity;
-
-			// We're outputting BGR, the last byte in the 32 bits is unused so skip it
-			// If we were outputting BGRA, we would write alpha here.
-			++rgbrun;
+			if (flip) {
+				--rgbrun;					// a
+				*(rgbrun--) = intensity;	// r
+				*(rgbrun--) = intensity;	// g
+				*(rgbrun--) = intensity;	// b
+			}
+			else {
+				// Write out blue byte
+				*(rgbrun++) = intensity;
+				// Write out green byte
+				*(rgbrun++) = intensity;
+				// Write out red byte
+				*(rgbrun++) = intensity;
+				// We're outputting BGR, the last byte in the 32 bits is unused so skip it
+				// If we were outputting BGRA, we would write alpha here.
+				++rgbrun;
+			}
 
 			// Increment our index into the Kinect's depth buffer
 			++pBufferRun;
@@ -165,19 +185,44 @@ void KinectSensorV1::ProcessColor()
 
 		rawInfraredData.clear();
 
-		for (int i = 0; i < cDepthWidth * cDepthHeight; ++i)
-		{
-			USHORT depth = reinterpret_cast<USHORT*>(LockedRect.pBits)[i];
-			BYTE intensity = depth >> 8;
+		
+		for (int j = 0; j < cDepthHeight; ++j) {
+			for (int i = 0; i < cDepthWidth; ++i) {
+				int idx = j * cDepthWidth + i;
+				USHORT depth = reinterpret_cast<USHORT*>(LockedRect.pBits)[idx];
+				BYTE intensity = depth >> 8;
 
-			rawInfraredData.push_back(intensity);
+				rawInfraredData.push_back(intensity);
 
-			RGBQUAD *pQuad = &m_pTempColorBuffer[i];
-			pQuad->rgbBlue = intensity;
-			pQuad->rgbGreen = intensity;
-			pQuad->rgbRed = intensity;
-			pQuad->rgbReserved = 255;
+				if (flip) {
+					idx = (cDepthHeight - 1 - j) * cDepthWidth + (cDepthWidth - 1 - i);
+				}
+
+				RGBQUAD *pQuad = &m_pTempColorBuffer[idx];
+				pQuad->rgbBlue = intensity;
+				pQuad->rgbGreen = intensity;
+				pQuad->rgbRed = intensity;
+				pQuad->rgbReserved = 255;
+			}
 		}
+		//for (int i = 0; i < cDepthWidth * cDepthHeight; ++i)
+		//{
+		//	USHORT depth = reinterpret_cast<USHORT*>(LockedRect.pBits)[i];
+		//	BYTE intensity = depth >> 8;
+
+		//	rawInfraredData.push_back(intensity);
+
+		//	int idx = i;
+		//	if (flip) {
+		//		idx =
+		//	}
+
+		//	RGBQUAD *pQuad = &m_pTempColorBuffer[i];
+		//	pQuad->rgbBlue = intensity;
+		//	pQuad->rgbGreen = intensity;
+		//	pQuad->rgbRed = intensity;
+		//	pQuad->rgbReserved = 255;
+		//}
 
 		// Draw the data with Direct2D
 		m_pDrawColor->Draw(reinterpret_cast<BYTE*>(m_pTempColorBuffer), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));

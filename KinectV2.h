@@ -57,6 +57,7 @@ public:
 	vector<UINT16>			rawDepthData;
 	vector<BYTE>			rawInfraredData;
 	RGBQUAD*                m_pInfraredRGBX = nullptr;
+	RGBQUAD*                m_pDepthRGBX = nullptr;
 
 private:
 	// Current Kinect
@@ -69,7 +70,6 @@ private:
 	IDepthFrame*			pDepthFrame			= NULL;
 	IFrameDescription*		pFrameDescription	= NULL;
 
-	RGBQUAD*                m_pDepthRGBX	= nullptr;
 	ImageRenderer*			m_pDrawDepth	= nullptr;
 	ImageRenderer*          m_pDrawInfrared = nullptr;
 

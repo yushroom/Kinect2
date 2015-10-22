@@ -58,9 +58,9 @@ private:
 	INT64                   m_nLastCounter;
 	double                  m_fFreq;
 	INT64                   m_nNextStatusTime;
-	DWORD                   m_nFramesSinceUpdate;
+	UINT                    m_nFramesSinceUpdate;
 	bool                    m_bSaveScreenshot;
-	int					m_nScreenShotCount = 0;
+	int						m_nScreenShotCount = 0;
 
 	// Current Kinect
 	//IKinectSensor*          m_pKinectSensor;
@@ -106,7 +106,7 @@ private:
 	/// <returns>
 	/// S_OK on success, otherwise failure code.
 	/// </returns>
-	HRESULT                 GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, UINT nFilePathSize);
+	HRESULT                 GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, LPWSTR lpszFilePath_depth, UINT nFilePathSize, int kinect_version);
 
 	/// <summary>
 	/// Save passed in image data to disk as a bitmap b 

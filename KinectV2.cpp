@@ -7,6 +7,8 @@ KinectSensorV2::KinectSensorV2()
 	// create heap storage for depth pixel data in RGBX format
 	m_pDepthRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
 	m_pInfraredRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
+
+	rawDepthData.reserve(cDepthHeight * cDepthWidth);
 }
 
 KinectSensorV2::~KinectSensorV2()
