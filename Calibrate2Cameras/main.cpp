@@ -58,19 +58,19 @@ static void InitIntrinsicMatrix(Mat &cameraMatrix, Mat& distCoeffs, double camer
 {
 	cameraMatrix = Mat::eye(3, 3, CV_64F), distCoeffs = Mat::zeros(4, 1, CV_64F);
 	double cameraMat[][3] = {
-			{ camera[0], 0, camera[2] },
-			{ 0, camera[1], camera[3] },
-			{ 0, 0, 1 } };
+		{ camera[0], 0, camera[2] },
+		{ 0, camera[1], camera[3] },
+		{ 0, 0, 1 } };
 	//		distCoe[] = {
 	//			0.12829104246656706,
 	//			-0.28001339944717657,
 	//			0.00072822381144142909,
 	//			-0.0015974931045705622
 	//		};
-	for (int i = 0; i<3; i++)
-		for (int j = 0; j<3; j++)
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
 			cameraMatrix.at<double>(i, j) = cameraMat[i][j];
-	for (int i = 0; i<4; i++)
+	for (int i = 0; i < 4; i++)
 		distCoeffs.at<double>(i) = distCoe[i];
 }
 
@@ -83,8 +83,14 @@ double distCoeffRGB_cropped[] = { 0.079720648168906463, -0.015686540595863777, 0
 #define M_PI       3.14159265358979323846
 const double fovyLeft = 45.f / 180.f * M_PI;
 // double cameraLeft[] = { 512.f/424 / 2.f / atanf(fovyLeft / 2.f), 424 / 2.f / atanf(fovyLeft / 2.f), 512 / 2.f, 424 / 2.f };
-double cameraLeft[] = { 511.137, 511.192, 512 / 2.f, 424 / 2.f };
-double distCoeffLeft[] = { 0, 0, 0, 0 };
+//double camera_v1[] = { 586.881, 585.482, 321.222, 232.1 };
+//double distCoeffLeft_v1[] = { 0.144880, 0.440790, 0.004036, -0.002119 };
+//double camera_v2[] = { 413.864, 412.790, 325.169, 234.573 };
+//double distCoeffLeft_v2[] = { 0.083012, -0.223039, 0.002381, 0.003085 };
+double camera_v1[] = { 587.066, 585.784, 257.843, 204.720 };
+double distCoeffLeft_v1[] = { -0.152820, 0.493023, 0.004213, -0.001930 };
+double camera_v2[] = { 364.440, 363.688, 259.818, 207.523 };
+double distCoeffLeft_v2[] = { 0.082583, -0.221877, 0.002659, 0.002765 };
 static void
 StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated = true, bool showRectified = true)
 {
@@ -94,9 +100,9 @@ StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated 
 		return;
 	}
 
-	bool displayCorners = true;//true;
+	bool displayCorners = false;//true;
 	const int maxScale = 2;
-	const float squareSize = 1.f;  // Set this to your actual square size
+	const float squareSize = 1.772f;  // Set this to your actual square size
 	// ARRAY AND VECTOR STORAGE:
 
 	vector<vector<Point2f> > imagePoints[2];
@@ -121,10 +127,10 @@ StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated 
 				imageSize = img.size();
 			else if (img.size() != imageSize)
 			{
-				Mat timg = img;
-				resize(timg, img, imageSize);
-				//cout << "The image " << filename << " has the size different from the first image size. Skipping the pair\n";
-				//break;
+				//Mat timg = img;
+				//resize(timg, img, imageSize);
+				cout << "The image " << filename << " has the size different from the first image size. Skipping the pair\n";
+				break;
 			}
 			bool found = false;
 			vector<Point2f>& corners = imagePoints[k][j];
@@ -213,8 +219,8 @@ StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated 
 	//	CV_CALIB_RATIONAL_MODEL +
 	//	CV_CALIB_FIX_K3 + CV_CALIB_FIX_K4 + CV_CALIB_FIX_K5);
 	{
-		InitIntrinsicMatrix(cameraMatrix[0], distCoeffs[0], cameraLeft, distCoeffLeft);
-		InitIntrinsicMatrix(cameraMatrix[1], distCoeffs[1], cameraLeft, distCoeffLeft);
+		InitIntrinsicMatrix(cameraMatrix[0], distCoeffs[0], camera_v1, distCoeffLeft_v1);
+		InitIntrinsicMatrix(cameraMatrix[1], distCoeffs[1], camera_v2, distCoeffLeft_v2);
 		//InitIntrinsicMatrix(cameraMatrix[1], distCoeffs[1], cameraRGB_cropped, distCoeffRGB_cropped);
 	}
 	double rms = stereoCalibrate(objectPoints, imagePoints[0], imagePoints[1],
@@ -222,8 +228,7 @@ StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated 
 		cameraMatrix[1], distCoeffs[1],
 		imageSize, R, T, E, F,
 		CALIB_FIX_INTRINSIC,
-		TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 100, 1e-5)
-		);
+		TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 100, 1e-5));
 	cout << "done with RMS error=" << rms << endl;
 
 	// CALIBRATION QUALITY CHECK
@@ -435,43 +440,17 @@ int main(int argc, char** argv)
 
 	if (imagelistfn == "")
 	{
-		imagelistfn = "stereo_calib.xml";
-		boardSize = Size(9, 6);
+		imagelistfn = "D:\\yyk\\stereo_calib_all.xml";
+		boardSize = Size(11, 10);
 	}
-	boardSize = Size(9, 6);
-	imagelistfn = "E:\\rect_input\\stereo_calib.xml";
-#ifdef SAMPLE
-	imagelistfn = "D:\\Program Files\\opencv\\sources\\samples\\cpp\\stereo_calib.xml";
-#endif
-	vector<string> imagelist;
-	bool ok = readStringList(imagelistfn, imagelist);
-#ifdef SAMPLE
-	string prefix = string("D:\\Program Files\\opencv\\sources\\samples\\cpp\\");
-	for (int i=0; i<imagelist.size(); i++) {
-		imagelist[i] = prefix + imagelist[i];
-	}
-#endif
-//#define RESIZE
-#ifdef RESIZE
+	else if (boardSize.width <= 0 || boardSize.height <= 0)
 	{
-		Mat target = imread(imagelist[0]);
-		Size imageSize = target.size();
-		for (auto& name : imagelist) {
-			Mat src = imread(name);
-			if (src.size() != imageSize) {
-				Mat rt;
-				int w = src.size().width*imageSize.height/src.size().height, 
-					h = src.size().height*imageSize.height/src.size().height;
-				Size s_size = Size(w, h);
-				resize(src, rt, s_size);
-				Rect rect(w/2-imageSize.width/2, 0,imageSize.width, h);	   
-				Mat rt2 = rt(rect);
-				imwrite(name, rt2);
-			}
-		}
+		cout << "if you specified XML file with chessboards, you should also specify the board width and height (-w and -h options)" << endl;
 		return 0;
 	}
-#endif
+
+	vector<string> imagelist;
+	bool ok = readStringList(imagelistfn, imagelist);
 	if (!ok || imagelist.empty())
 	{
 		cout << "can not open " << imagelistfn << " or the string list is empty" << endl;

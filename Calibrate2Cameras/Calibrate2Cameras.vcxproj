@@ -86,6 +86,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ippicvmt.lib;opencv_stitching300.lib;opencv_videostab300.lib;opencv_shape300.lib;opencv_objdetect300.lib;opencv_photo300.lib;opencv_calib3d300.lib;opencv_features2d300.lib;opencv_flann300.lib;opencv_highgui300.lib;opencv_videoio300.lib;opencv_imgcodecs300.lib;opencv_ml300.lib;opencv_video300.lib;opencv_imgproc300.lib;opencv_core300.lib;opencv_hal300.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -118,8 +119,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;ippicvmt.lib;libjpeg.lib;libpng.lib;libtiff.lib;libjasper.lib;IlmImf.lib;opencv_stitching300.lib;opencv_videostab300.lib;opencv_shape300.lib;opencv_objdetect300.lib;opencv_photo300.lib;opencv_calib3d300.lib;opencv_features2d300.lib;opencv_flann300.lib;opencv_highgui300.lib;opencv_videoio300.lib;opencv_imgcodecs300.lib;opencv_ml300.lib;opencv_video300.lib;opencv_imgproc300.lib;opencv_core300.lib;opencv_hal300.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\build\x64\vc12\staticlib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippicvmt.lib;opencv_stitching300.lib;opencv_videostab300.lib;opencv_shape300.lib;opencv_objdetect300.lib;opencv_photo300.lib;opencv_calib3d300.lib;opencv_features2d300.lib;opencv_flann300.lib;opencv_highgui300.lib;opencv_videoio300.lib;opencv_imgcodecs300.lib;opencv_ml300.lib;opencv_video300.lib;opencv_imgproc300.lib;opencv_core300.lib;opencv_hal300.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\lib\Release;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
