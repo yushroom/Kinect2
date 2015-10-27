@@ -106,7 +106,7 @@ private:
 	/// <returns>
 	/// S_OK on success, otherwise failure code.
 	/// </returns>
-	HRESULT                 GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, LPWSTR lpszFilePath_depth, UINT nFilePathSize, int kinect_version);
+	HRESULT                 GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, LPWSTR lpszFilePath_depth, LPWSTR lpszFilePath_depth_bin, UINT nFilePathSize, int kinect_version);
 
 	/// <summary>
 	/// Save passed in image data to disk as a bitmap b 

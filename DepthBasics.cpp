@@ -15,6 +15,14 @@
 #include "Math.hpp"
 #include "NuiApi.h"
 
+#include <direct.h>
+#include <io.h>
+#include <ctime>
+#include <sstream>
+
+#define ACCESS _access;
+#define MKDIR(a) _mkdir((a));
+
 using namespace std;
 
 #define IR_FX (387.56565394355408)
@@ -358,6 +366,60 @@ bool CDepthBasics::SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMsec
 	return false;
 }
 
+std::string WstringToString(const std::wstring str)
+{
+	unsigned len = str.size() * 4;
+	setlocale(LC_CTYPE, "");
+	char *p = new char[len];
+	wcstombs(p, str.c_str(), len);
+	std::string str1(p);
+	delete[] p;
+	return str1;
+}
+
+
+int CreatDir(const char *pDir)
+{
+	int i = 0;
+	int iRet;
+	int iLen;
+	char* pszDir;
+
+	if (NULL == pDir)
+	{
+		return 0;
+	}
+
+	pszDir = strdup(pDir);
+	iLen = strlen(pszDir);
+
+	// 创建中间目录
+	for (i = 0; i < iLen; i++)
+	{
+		if (pszDir[i] == '\\' || pszDir[i] == '/')
+		{
+			pszDir[i] = '\0';
+
+			//如果不存在,创建
+			iRet = _access(pszDir, 0);
+			if (iRet != 0)
+			{
+				iRet = MKDIR(pszDir);
+				if (iRet != 0)
+				{
+					return -1;
+				}
+			}
+			//支持linux,将所有\换成/
+			pszDir[i] = '/';
+		}
+	}
+
+	iRet = MKDIR(pszDir);
+	free(pszDir);
+	return iRet;
+}
+
 /// <summary>
 /// Get the name of the file where screenshot will be stored.
 /// </summary>
@@ -366,7 +428,7 @@ bool CDepthBasics::SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMsec
 /// <returns>
 /// S_OK on success, otherwise failure code.
 /// </returns>
-HRESULT CDepthBasics::GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, LPWSTR lpszFilePath_depth, UINT nFilePathSize, int kinect_version)
+HRESULT CDepthBasics::GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR lpszFilePath, LPWSTR lpszFilePath_depth, LPWSTR lpszFilePath_depth_bin, UINT nFilePathSize, int kinect_version)
 {
 	WCHAR* pszKnownPath = IMAGE_PATH_PREFIX_W;
 	//HRESULT hr = SHGetKnownFolderPath(FOLDERID_Pictures, 0, NULL, &pszKnownPath);
@@ -376,14 +438,21 @@ HRESULT CDepthBasics::GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWSTR
 		// Get the time
 		WCHAR szTimeString[MAX_PATH];
 		GetTimeFormatEx(NULL, 0, NULL, L"hh'-'mm'-'ss", szTimeString, _countof(szTimeString));
+		
+		//time_t now = time(0);
+		std::stringstream ss;
+		ss << IMAGE_PATH_PREFIX_A << "\\" << WstringToString(szTimeString) << '-' << m_nScreenShotCount;
+		CreatDir(ss.str().c_str());
 
 		if (kinect_version == 1) {
-			StringCchPrintfW(lpszFilePath, nFilePathSize, L"%s\\a-%s-%d.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
-			StringCchPrintfW(lpszFilePath_depth, nFilePathSize, L"%s\\a-%s-%d-depth.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath, nFilePathSize, L"%s\\%s-%d\\a-%s-%d.bmp", pszKnownPath, szTimeString, m_nScreenShotCount, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath_depth, nFilePathSize, L"%s\\%s-%d\\a-%s-%d-depth.bmp", pszKnownPath, szTimeString, m_nScreenShotCount, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath_depth_bin, nFilePathSize, L"%s\\%s-%d\\a-%s-%d.bin", pszKnownPath, szTimeString, m_nScreenShotCount, szTimeString, m_nScreenShotCount);
 		}
 		else{
-			StringCchPrintfW(lpszFilePath, nFilePathSize, L"%s\\b-%s-%d.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
-			StringCchPrintfW(lpszFilePath_depth, nFilePathSize, L"%s\\b-%s-%d-depth.bmp", pszKnownPath, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath, nFilePathSize, L"%s\\%s-%d\\b-%s-%d.bmp", pszKnownPath, szTimeString, m_nScreenShotCount, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath_depth, nFilePathSize, L"%s\\%s-%d\\b-%s-%d-depth.bmp", pszKnownPath, szTimeString, m_nScreenShotCount, szTimeString, m_nScreenShotCount);
+			StringCchPrintfW(lpszFilePath_depth_bin, nFilePathSize, L"%s\\%s-%d\\b-%s-%d.bin", pszKnownPath, szTimeString, m_nScreenShotCount, szTimeString, m_nScreenShotCount);
 		}
 	}
 
@@ -576,28 +645,35 @@ void sava_raw_depth(vector<UINT16> raw_depth, int size, const char* filename) {
 	os.close();
 }
 
+
 void CDepthBasics::SaveInfraredImage()
 {
+	//time_t now = time(0);
+	//std::stringstream ss;
+	//ss << IMAGE_PATH_PREFIX_A << "\\" << now << '-' << m_nScreenShotCount;
+	//CreatDir(ss.str().c_str());
+
 	WCHAR szScreenshotPath[MAX_PATH];
 	WCHAR szScreenshotPath_depth[MAX_PATH];
+	WCHAR szScreenshotPath_depth_bin[MAX_PATH];
 #if 1
 	//wsprintf(szScreenshotPath, L"%s\\a_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
-	GetScreenshotFileName(szScreenshotPath, szScreenshotPath_depth, _countof(szScreenshotPath), 1);
+	GetScreenshotFileName(szScreenshotPath, szScreenshotPath_depth, szScreenshotPath_depth_bin,  _countof(szScreenshotPath), 1);
 	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_pTempColorBuffer), KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
 	SaveBitmapToFile(m_kinectV1.m_depthRGBX, KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath_depth);
 	info("image a saved.\n");
-	sava_raw_depth(m_kinectV1.rawDepthData, KinectSensorV1::cDepthWidth * KinectSensorV1::cDepthHeight, "d:\\yyk\\image\\k1_depth.bin");
+	sava_raw_depth(m_kinectV1.rawDepthData, KinectSensorV1::cDepthWidth * KinectSensorV1::cDepthHeight, WstringToString(szScreenshotPath_depth_bin).c_str());
 	//info("save file to %s\\a_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
 
 #endif
 #if 1
 	//wsprintf(szScreenshotPath, L"%s\\b_%04d.bmp", IMAGE_PATH_PREFIX_W, m_nScreenShotCount);
-	GetScreenshotFileName(szScreenshotPath, szScreenshotPath_depth, _countof(szScreenshotPath), 2);
+	GetScreenshotFileName(szScreenshotPath, szScreenshotPath_depth, szScreenshotPath_depth_bin, _countof(szScreenshotPath), 2);
 	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pInfraredRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
 	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pDepthRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, szScreenshotPath_depth);
 	//info("save file to %s\\b_%04d.bmp\n", IMAGE_PATH_PREFIX_A, m_nScreenShotCount);
 	info("image b saved.\n");
-	sava_raw_depth(m_kinectV2.rawDepthData, KinectSensorV2::cDepthWidth * KinectSensorV2::cDepthHeight, "d:\\yyk\\image\\k2_depth.bin");
+	sava_raw_depth(m_kinectV2.rawDepthData, KinectSensorV2::cDepthWidth * KinectSensorV2::cDepthHeight, WstringToString(szScreenshotPath_depth_bin).c_str());
 #endif
 	m_nScreenShotCount++;
 }

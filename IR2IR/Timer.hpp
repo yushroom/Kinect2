@@ -10,10 +10,10 @@ private:
 	time_point _start;
 	time_point _end;
 	string _label;
-	bool _has_started = false;
+	bool _has_started;
 
 public:
-	Timer(string label) : _label(label) {}
+	Timer(string label) : _label(label), _has_started(false) {}
 
 	void set_label(string label) {
 		_label = label;

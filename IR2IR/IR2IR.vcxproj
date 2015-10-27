@@ -32,8 +32,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Parallel</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -45,9 +46,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Parallel</UseIntelMKL>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -86,7 +88,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\yyk\workspace\library\CodeX\lib\x64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\lib\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>CodeX_Basic.lib;CodeX_Graphics.lib;CodeX_Math.lib;CodeX_Utils.lib;ippicvmt.lib;AdvMathd.lib;opencv_stitching300d.lib;opencv_videostab300d.lib;opencv_shape300d.lib;opencv_objdetect300d.lib;opencv_photo300d.lib;opencv_calib3d300d.lib;opencv_features2d300d.lib;opencv_flann300d.lib;opencv_highgui300d.lib;opencv_videoio300d.lib;opencv_imgcodecs300d.lib;opencv_ml300d.lib;opencv_video300d.lib;opencv_imgproc300d.lib;opencv_core300d.lib;opencv_hal300d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>CodeX_Basicd.lib;CodeX_Graphicsd.lib;CodeX_Mathd.lib;CodeX_Utilsd.lib;ippicvmt.lib;AdvMathd.lib;opencv_stitching300d.lib;opencv_videostab300d.lib;opencv_shape300d.lib;opencv_objdetect300d.lib;opencv_photo300d.lib;opencv_calib3d300d.lib;opencv_features2d300d.lib;opencv_flann300d.lib;opencv_highgui300d.lib;opencv_videoio300d.lib;opencv_imgcodecs300d.lib;opencv_ml300d.lib;opencv_video300d.lib;opencv_imgproc300d.lib;opencv_core300d.lib;opencv_hal300d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -117,19 +119,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>CodeX_Basic.lib;CodeX_Graphics.lib;CodeX_Math.lib;CodeX_Utils.lib;ippicvmt.lib;AdvMath.lib;opencv_stitching300.lib;opencv_videostab300.lib;opencv_shape300.lib;opencv_objdetect300.lib;opencv_photo300.lib;opencv_calib3d300.lib;opencv_features2d300.lib;opencv_flann300.lib;opencv_highgui300.lib;opencv_videoio300.lib;opencv_imgcodecs300.lib;opencv_ml300.lib;opencv_video300.lib;opencv_imgproc300.lib;opencv_core300.lib;opencv_hal300.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\yyk\workspace\library\CodeX\lib\x64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\lib\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mkl_intel_lp64.lib;mkl_intel_thread.lib;mkl_core.lib;mkl_rt.lib;CodeX_Basic.lib;CodeX_Graphics.lib;CodeX_Math.lib;CodeX_Utils.lib;ippicvmt.lib;AdvMath.lib;opencv_stitching300.lib;opencv_videostab300.lib;opencv_shape300.lib;opencv_objdetect300.lib;opencv_photo300.lib;opencv_calib3d300.lib;opencv_features2d300.lib;opencv_flann300.lib;opencv_highgui300.lib;opencv_videoio300.lib;opencv_imgcodecs300.lib;opencv_ml300.lib;opencv_video300.lib;opencv_imgproc300.lib;opencv_core300.lib;opencv_hal300.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\yyk\workspace\library\CodeX\lib\x64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\lib\Release;C:\Program Files (x86)\Intel\Composer XE 2013\mkl\lib\intel64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Error.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Timer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Error.hpp" />
-    <ClInclude Include="RenderFish.hpp" />
-    <ClInclude Include="Timer.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
