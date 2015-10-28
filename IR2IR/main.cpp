@@ -100,7 +100,7 @@ void solve_for_bias(const int w, const int h, const std::vector<float> &I,
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
 		{
-			int idx = x + y*w;
+			int idx = x+y*w;
 			if (VALID_DEPTH_TEST(I[idx]))
 			{
 				reg2idx[idx] = idx2reg.size();
@@ -110,15 +110,16 @@ void solve_for_bias(const int w, const int h, const std::vector<float> &I,
 	A.column = idx2reg.size();
 	//A.column = w*h;
 
-	//for (int i = 0; i < idx2reg.size(); i++)
-	for (int i = 0; i < w*h; i++)
+	for (int i = 0; i < idx2reg.size(); i++)
+	//for (int i = 0; i < w*h; i++)
 	{
-		int idx = i,//idx2reg[i],
+		int idx = //i,
+				idx2reg[i],
 			x = idx % w, y = idx / w;
 		int idx_first, idx_last;
 
 		//data term
-		if (!VALID_DEPTH_TEST(I[i])) continue;
+		if (!VALID_DEPTH_TEST(I[idx])) continue;
 
 		idx_first = (int)A.val.size();
 		idx_last = (int)A.val.size();
@@ -137,9 +138,9 @@ void solve_for_bias(const int w, const int h, const std::vector<float> &I,
 			int xx = x + dir[j * 2 + 0],
 				yy = y + dir[j * 2 + 1];
 			if (xx >= 0 && xx < w && yy >= 0 && yy < h && idx < xx + yy*w 
-				//&& reg2idx[xx + yy*w] >= 0 && 
-				//VALID_DEPTH_TEST(I[reg2idx[xx + yy*w]])
-				&& VALID_DEPTH_TEST(I[xx + yy*w])
+				&& reg2idx[xx + yy*w] >= 0 && 
+				VALID_DEPTH_TEST(I[xx + yy*w])
+				//&& VALID_DEPTH_TEST(I[xx + yy*w])
 				)
 			{
 				idx_first = (int)A.val.size();
@@ -148,8 +149,8 @@ void solve_for_bias(const int w, const int h, const std::vector<float> &I,
 				A.val.push_back(1.0f);
 				A.cols.push_back(i);
 				A.val.push_back(-1.0f);
-				//A.cols.push_back(reg2idx[xx + yy*w]);
-				A.cols.push_back(xx + yy*w);
+				A.cols.push_back(reg2idx[xx + yy*w]);
+				//A.cols.push_back(xx + yy*w);
 
 				A.ptrb.push_back(idx_first);
 				A.ptre.push_back(idx_last + 2);
@@ -165,10 +166,11 @@ void solve_for_bias(const int w, const int h, const std::vector<float> &I,
 	advmath::ssplsqr(x, A, b, lambda, niter, true);
 
 	result.assign(w*h, DEPTH_INVALID);
+	for (int i = 0; i < idx2reg.size(); i++)
+		result[idx2reg[i]] = x.v[i];
 
-	//for (int i = 0; i < idx2reg.size(); i++)
-	for (int i = 0; i < w*h; i++)
-		result[i] = x.v[i];
+	//for (int i = 0; i < w*h; i++)
+	//	result[i] = x.v[i];
 }
 
 void adjust_for_bias(std::vector<float> &depth, const std::vector<float> &bias)
@@ -939,14 +941,12 @@ int main()
 
 
 		vector<float> depth, bias;
-		float smooth = 0.050f;
+		float smooth = 0.350f;
 		prepare_for_solving_bias(depth,depth1_to_2, depth_und[1]);
 		solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
 
 		Mat new_points_1 = calc_points(depth1_to_2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 		Mat new_points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-
-
 
 		{
 			auto bias_ = bias;
