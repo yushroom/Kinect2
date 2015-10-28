@@ -100,16 +100,17 @@ void KinectSensorV1::ProcessDepth()
 		if (flip) {
 			raw_depth_data_idx = cDepthWidth * cDepthHeight-1;
 		}
+		rawDepthData.resize(cDepthWidth * cDepthHeight);
 
 		while (pBufferRun < pBufferEnd)
 		{
 			// discard the portion of the depth that contains only the player index
 			USHORT depth = pBufferRun->depth;
 			if (flip) {
-				rawDepthData[raw_depth_data_idx--] = depth;
+				rawDepthData[raw_depth_data_idx--] = (depth >= minDepth && depth <= maxDepth) ? depth : 0;
 			}
 			else {
-				rawDepthData[raw_depth_data_idx++] = depth;
+				rawDepthData[raw_depth_data_idx++] = (depth >= minDepth && depth <= maxDepth) ? depth : 0;
 			}
 
 			// To convert to a byte, we're discarding the most-significant

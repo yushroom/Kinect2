@@ -1,4 +1,5 @@
-﻿#include <vector>
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <vector>
 #include <utility>
 #include <atlimage.h>
 #include <codex_math.h>
@@ -30,7 +31,7 @@ static const bool write_file = false;
 #define HEIGHT 480
 
 #define ROOT_DIR			"D:\\yyk\\image\\"
-#define NUMBER_ID			"01-15-55-0"
+#define NUMBER_ID			"12-09-32-0"
 #define IMAGE_DIR			ROOT_DIR NUMBER_ID "\\"
 #define PREFIX_A			IMAGE_DIR "a-" NUMBER_ID
 #define PREFIX_B			IMAGE_DIR "b-" NUMBER_ID
@@ -92,81 +93,88 @@ void solve_for_bias(const int w, const int h, const std::vector<float> &I,
 
 	advmath::la_matrix_csr<float> A;
 	std::vector<float> vb;
-	A.column = w*h;
 
 	std::vector<int> reg2idx, idx2reg;
 	reg2idx.resize(w*h, -1);
-
-	int count = 0;
+	
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
 		{
 			int idx = x + y*w;
 			if (VALID_DEPTH_TEST(I[idx]))
 			{
-				reg2idx[idx] = count;
+				reg2idx[idx] = idx2reg.size();
 				idx2reg.push_back(idx);
-				count++;
 			}
 		}
+	A.column = idx2reg.size();
+	//A.column = w*h;
 
-		for (int i = 0; i < idx2reg.size(); i++)
+	//for (int i = 0; i < idx2reg.size(); i++)
+	for (int i = 0; i < w*h; i++)
+	{
+		int idx = i,//idx2reg[i],
+			x = idx % w, y = idx / w;
+		int idx_first, idx_last;
+
+		//data term
+		if (!VALID_DEPTH_TEST(I[i])) continue;
+
+		idx_first = (int)A.val.size();
+		idx_last = (int)A.val.size();
+
+		A.val.push_back(alpha);
+		A.cols.push_back(i);
+
+		A.ptrb.push_back(idx_first);
+		A.ptre.push_back(idx_last + 1);
+		vb.push_back(alpha*I[idx]);
+		A.row++;
+
+		//smoothness terms
+		for (int j = 0; j < NUM_NEIGHBOR; j++)
 		{
-			int idx = idx2reg[i],
-				x = idx % w, y = idx / w;
-			int idx_first, idx_last;
-
-			//data term
-			idx_first = (int)A.val.size();
-			idx_last = (int)A.val.size();
-
-			A.val.push_back(alpha);
-			A.cols.push_back(i);
-
-			A.ptrb.push_back(idx_first);
-			A.ptre.push_back(idx_last + 1);
-			vb.push_back(alpha*I[idx]);
-			A.row++;
-
-			//smoothness terms
-			for (int j = 0; j < NUM_NEIGHBOR; j++)
+			int xx = x + dir[j * 2 + 0],
+				yy = y + dir[j * 2 + 1];
+			if (xx >= 0 && xx < w && yy >= 0 && yy < h && idx < xx + yy*w 
+				//&& reg2idx[xx + yy*w] >= 0 && 
+				//VALID_DEPTH_TEST(I[reg2idx[xx + yy*w]])
+				&& VALID_DEPTH_TEST(I[xx + yy*w])
+				)
 			{
-				int xx = x + dir[j * 2 + 0],
-					yy = y + dir[j * 2 + 1];
-				if (xx >= 0 && xx < w && yy >= 0 && yy < h && idx < xx + yy*w && reg2idx[xx + yy*w] >= 0 && 
-					VALID_DEPTH_TEST(I[reg2idx[xx + yy*w]]))
-				{
-					idx_first = (int)A.val.size();
-					idx_last = (int)A.val.size();
+				idx_first = (int)A.val.size();
+				idx_last = (int)A.val.size();
 
-					A.val.push_back(1.0f);
-					A.cols.push_back(i);
-					A.val.push_back(-1.0f);
-					A.cols.push_back(reg2idx[xx + yy*w]);
+				A.val.push_back(1.0f);
+				A.cols.push_back(i);
+				A.val.push_back(-1.0f);
+				//A.cols.push_back(reg2idx[xx + yy*w]);
+				A.cols.push_back(xx + yy*w);
 
-					A.ptrb.push_back(idx_first);
-					A.ptre.push_back(idx_last + 2);
-					vb.push_back(0);
-					A.row++;
-				}
+				A.ptrb.push_back(idx_first);
+				A.ptre.push_back(idx_last + 2);
+				vb.push_back(0);
+				A.row++;
 			}
 		}
+	}
 
-		advmath::la_vector<float> b(vb);
-		//sparse least square
-		advmath::la_vector<float> x;
-		advmath::ssplsqr(x, A, b, lambda, niter, true);
+	advmath::la_vector<float> b(vb);
+	//sparse least square
+	advmath::la_vector<float> x;
+	advmath::ssplsqr(x, A, b, lambda, niter, true);
 
-		result.assign(w*h, DEPTH_INVALID);
+	result.assign(w*h, DEPTH_INVALID);
 
-		for (int i = 0; i < idx2reg.size(); i++)
-			result[idx2reg[i]] = x.v[i];
+	//for (int i = 0; i < idx2reg.size(); i++)
+	for (int i = 0; i < w*h; i++)
+		result[i] = x.v[i];
 }
 
 void adjust_for_bias(std::vector<float> &depth, const std::vector<float> &bias)
 {
 	for (int i = 0; i < depth.size(); i++)
-		depth[i] = (VALID_DEPTH_TEST(depth[i]) ? depth[i]-bias[i] : 0);
+		depth[i] = (VALID_DEPTH_TEST(bias[i]) ? depth[i] - bias[i] : 0);
 }
 
 void prepare_for_solving_bias(std::vector<float> &depth, 
@@ -204,9 +212,6 @@ Mat ToCVImage(const vector<UINT16>& src)
 	return temp;
 }
 
-// points: Mat(3, WIDTH * HEIGHT)
-// IR: Mat(HEIGHT, WIDTH)
-
 #define ZERO(x) ((fabsf(x) < 1e-3f))
 
 inline void writePly(const Mat& points, const Mat& IR, const char *filename, int w = WIDTH, int h = HEIGHT, 
@@ -238,6 +243,38 @@ inline void writePly(const Mat& points, const Mat& IR, const char *filename, int
 			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, unsigned char(c*r), unsigned char(c*g), unsigned char(c*b));
 		}
 	fclose(fp);
+}
+
+inline void writePly(const Mat& points, const vector<UINT16>& IR, const char *filename, int w = WIDTH, int h = HEIGHT, 
+					 float r = 1, float g = 1, float b = 1, float tx = 0, float ty = 0, float tz = 0)
+{
+	FILE *fp;
+	fopen_s(&fp, filename, "w");
+	fprintf(fp, "ply\n");
+	fprintf(fp, "format ascii 1.0\n");
+	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
+	fprintf(fp, "element vertex %d\n", w * h);
+	fprintf(fp, "property float x\n");
+	fprintf(fp, "property float y\n");
+	fprintf(fp, "property float z\n");
+	fprintf(fp, "property uchar red\n");
+	fprintf(fp, "property uchar green\n");
+	fprintf(fp, "property uchar blue\n");
+	fprintf(fp, "element face 0\n");
+	fprintf(fp, "property list uchar int vertex_index\n");
+	fprintf(fp, "end_header\n");
+
+	for (int j = 0; j < h; ++j)
+		for (int i = 0; i < w; ++i) {
+			int idx = j * w + i;
+			//int c = IR.at<unsigned char>(j, i);
+			int c = IR[idx];
+			float x = points.at<float>(0, idx) + tx;
+			float y = points.at<float>(1, idx) + ty;
+			float z = points.at<float>(2, idx) + tz;
+			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, unsigned char(c*r), unsigned char(c*g), unsigned char(c*b));
+		}
+		fclose(fp);
 }
 
 inline void writePly_roi(const Mat& points, const Mat& IR, const char *filename, bool cropped = false, cv::Rect rect = Rect(0, 0, WIDTH, HEIGHT), float r = 1, float g = 1, float b = 1)
@@ -280,40 +317,6 @@ struct Vertex {
 	float x, y, z;
 	unsigned char r, g, b;
 };
-
-//inline void writePly_binary(const Mat& points, const Mat& IR, const char *filename)
-//{
-//	ofstream fout(filename, ios::binary);
-//	fout << "ply\n";
-//	fout << "format binary_little_endian 1.0\n";
-//	fout << "element vertex " << WIDTH * HEIGHT << '\n';
-//	fout << "property float x\n"
-//		<< "property float y\n"
-//		<< "property float z\n"
-//		<< "property uchar red\n"
-//		<< "property uchar green\n"
-//		<< "property uchar blue\n"
-//		<< "element face 0\n"
-//		<< "property list uchar int vertex_index\n"
-//		<< "end_header\n";
-//
-//	vector<Vertex> vertices;
-//	vertices.reserve(WIDTH * HEIGHT);
-//	for (int j = 0; j < HEIGHT; ++j)
-//		for (int i = 0; i < WIDTH; ++i) {
-//			int idx = j * WIDTH + i;
-//			int c = IR.at<unsigned char>(j, i);
-//			float x = points.at<float>(0, idx);
-//			float y = points.at<float>(1, idx);
-//			float z = points.at<float>(2, idx);
-//			//fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, c, c, c);
-//			//fout << x << y << z << c << c << c;
-//			if (z !=)
-//			vertices.push_back({ x, y, z, c, c, c });
-//		}
-//	fout.write((char*)&vertices[0], vertices.size() * sizeof(Vertex));
-//	fout.close();
-//}
 
 inline void writePly2(const Mat& points1, const Mat& points2, const Mat& IR1, const Mat& IR2, const char *filename,
 	float tx1 = 0, float ty1 = 0, float tz1 = 0, float tx2 = 0, float ty2 = 0, float tz2 = 0)
@@ -392,11 +395,13 @@ Mat calc_points(vector<float> depth, float fx, float fy, float cx, float cy, boo
 	//float x, y, z;
 	int w = roi.width;
 	int h = roi.height;
-	Mat points(3, w * h, CV_32F);
+	Mat points = Mat::zeros(3, w * h, CV_32F);
 	for (int j = roi.y; j < roi.y + roi.height; ++j)
 		for (int i = roi.x; i < roi.x + roi.width; ++i) {
 			int idx = (j-roi.y) * w + (i-roi.x);
 			float d = depth[idx];
+			if (!VALID_DEPTH_TEST(d))
+				continue;
 			//T d = cropped ? depth_image.at<T>(j-roi.y, i-roi.x) : depth_image.at<f>(j, i);
 			//float x_scale = inv_fx * d;
 			//float y_scale = inv_fy * d;
@@ -486,13 +491,15 @@ template<typename T>
 vector<T> mat_to_vector(const Mat& img) {
 	int w = img.cols;
 	int h = img.rows;
-	vector<float> vec;
+	cout << w << ' ' << h <<endl;
+	vector<T> vec;
 	vec.resize(w*h);
-	for (int j = 0; j < h; ++j)
+	for (int j = 0; j < h; ++j) {
 		for (int i = 0; i < w; ++i) {
 			int idx = j * w + i;
 			vec[idx] = img.at<T>(j,i);
 		}
+	}
 	return vec;
 }
 
@@ -500,27 +507,39 @@ template<typename T1, typename T2>
 vector<T1> mat_to_vector(const Mat& img) {
 	int w = img.cols;
 	int h = img.rows;
-	vector<float> vec;
+	vector<T1> vec;
 	vec.resize(w*h);
-	for (int j = 0; j < h; ++j)
+	for (int j = 0; j < h; ++j) {
 		for (int i = 0; i < w; ++i) {
 			int idx = j * w + i;
 			vec[idx] = img.at<T2>(j,i);
 		}
-		return vec;
+	}
+	return vec;
 }
 
-Mat vector_to_img_uc(const vector<float>& vec, int w, int h, float scale) {
+template<typename T>
+Mat vector_to_img_uc(const vector<T>& vec, int w, int h, float scale = 1) {
 	Mat img(h, w, CV_8U);
 	for (int j = 0; j < h; ++j)
 		for (int i = 0; i < w; ++i) {
 			int idx = j * w + i;
 			img.at<unsigned char>(j, i) = unsigned char(vec[idx] * scale);
 		}
-	return img;
+		return img;
 }
 
-Mat vector_to_img_f(const vector<float>& vec, int w, int h, float scale) {
+//Mat vector_to_img_uc(const vector<float>& vec, int w, int h, float scale) {
+//	Mat img(h, w, CV_8U);
+//	for (int j = 0; j < h; ++j)
+//		for (int i = 0; i < w; ++i) {
+//			int idx = j * w + i;
+//			img.at<unsigned char>(j, i) = unsigned char(vec[idx] * scale);
+//		}
+//	return img;
+//}
+
+Mat vector_to_img_f(const vector<float>& vec, int w, int h, float scale = 1) {
 	Mat img(h, w, CV_32F);
 	for (int j = 0; j < h; ++j)
 		for (int i = 0; i < w; ++i) {
@@ -559,65 +578,65 @@ void write_normalized_image(const Mat &img, const char *filename)
 	image_write(filename, output);
 }
 
-void solve_for_bias(const int w, const int h, const std::vector<float> &I,
-	const float alpha, const float lambda, const int niter,
-	std::vector<float> &result)
-{
-	const int NUM_NEIGHBOR = 4;
-	static int dir[NUM_NEIGHBOR * 2] = { -1, 0, 1, 0, 0, -1, 0, 1 };
-
-	advmath::la_matrix_csr<float> A;
-	std::vector<float> vb;
-	A.column = w*h;
-
-	for (int y = 0; y < h; y++)
-		for (int x = 0; x < w; x++)
-		{
-			int idx_first, idx_last, idx = x + y*w;
-
-			//data term
-			idx_first = (int)A.val.size();
-			idx_last = (int)A.val.size();
-
-			A.val.push_back(alpha);
-			A.cols.push_back(idx);
-
-			A.ptrb.push_back(idx_first);
-			A.ptre.push_back(idx_last + 1);
-			vb.push_back(alpha*I[idx]);
-			A.row++;
-
-			//smoothness terms
-			for (int i = 0; i < NUM_NEIGHBOR; i++)
-			{
-				int xx = x + dir[i * 2 + 0],
-					yy = y + dir[i * 2 + 1];
-				if (xx >= 0 && xx < w && yy >= 0 && yy < h && idx < xx + yy*w)
-				{
-					idx_first = (int)A.val.size();
-					idx_last = (int)A.val.size();
-
-					A.val.push_back(1.0f);
-					A.cols.push_back(idx);
-					A.val.push_back(-1.0f);
-					A.cols.push_back(xx + yy*w);
-
-					A.ptrb.push_back(idx_first);
-					A.ptre.push_back(idx_last + 2);
-					vb.push_back(0);
-					A.row++;
-				}
-			}
-		}
-
-	advmath::la_vector<float> b(vb);
-	//sparse least square
-	advmath::la_vector<float> x;
-	advmath::ssplsqr(x, A, b, lambda, niter, true);
-
-	result.resize(x.length);
-	std::memcpy(&result[0], x.v, sizeof(float)*x.length);
-}
+//void solve_for_bias(const int w, const int h, const std::vector<float> &I,
+//	const float alpha, const float lambda, const int niter,
+//	std::vector<float> &result)
+//{
+//	const int NUM_NEIGHBOR = 4;
+//	static int dir[NUM_NEIGHBOR * 2] = { -1, 0, 1, 0, 0, -1, 0, 1 };
+//
+//	advmath::la_matrix_csr<float> A;
+//	std::vector<float> vb;
+//	A.column = w*h;
+//
+//	for (int y = 0; y < h; y++)
+//		for (int x = 0; x < w; x++)
+//		{
+//			int idx_first, idx_last, idx = x + y*w;
+//
+//			//data term
+//			idx_first = (int)A.val.size();
+//			idx_last = (int)A.val.size();
+//
+//			A.val.push_back(alpha);
+//			A.cols.push_back(idx);
+//
+//			A.ptrb.push_back(idx_first);
+//			A.ptre.push_back(idx_last + 1);
+//			vb.push_back(alpha*I[idx]);
+//			A.row++;
+//
+//			//smoothness terms
+//			for (int i = 0; i < NUM_NEIGHBOR; i++)
+//			{
+//				int xx = x + dir[i * 2 + 0],
+//					yy = y + dir[i * 2 + 1];
+//				if (xx >= 0 && xx < w && yy >= 0 && yy < h && idx < xx + yy*w)
+//				{
+//					idx_first = (int)A.val.size();
+//					idx_last = (int)A.val.size();
+//
+//					A.val.push_back(1.0f);
+//					A.cols.push_back(idx);
+//					A.val.push_back(-1.0f);
+//					A.cols.push_back(xx + yy*w);
+//
+//					A.ptrb.push_back(idx_first);
+//					A.ptre.push_back(idx_last + 2);
+//					vb.push_back(0);
+//					A.row++;
+//				}
+//			}
+//		}
+//
+//	advmath::la_vector<float> b(vb);
+//	//sparse least square
+//	advmath::la_vector<float> x;
+//	advmath::ssplsqr(x, A, b, lambda, niter, true);
+//
+//	result.resize(x.length);
+//	std::memcpy(&result[0], x.v, sizeof(float)*x.length);
+//}
 
 inline void ReadCalibratedUndistortionTable(vector<pair<float, float>> &undistortLT, int width, int height, const char *filepath)
 {
@@ -644,91 +663,93 @@ inline float bilinear(float x, float y, UINT16* src, int width, int height, bool
 
 	float weight = 0.f, value = 0.f;
 	float w[] = { qx0*qy0, qx1*qy0, qx0*qy1, qx1*qy1 };
-	pair<int, int> xy[] = { { ix0, iy0 }, { ix1, iy0 }, { ix0, iy1 }, { ix1, iy1 } };
+	//pair<int, int> xy[] = { { ix0, iy0 }, { ix1, iy0 }, { ix0, iy1 }, { ix1, iy1 } };
+	int xx[] = {ix0, ix1, ix0, ix1};
+	int yy[] = {iy0, iy0, iy1, iy1};
 
 	for (int j = 0; j<4; j++) {
-		if (xy[j].first < 0 || xy[j].first >= width
-			|| xy[j].second < 0 || xy[j].second >= height)
+		if (xx[j] < 0 || xx[j] >= width
+			|| yy[j] < 0 || yy[j] >= height)
 			continue;
-		int idx = xy[j].first + xy[j].second * width;
+		int idx = xx[j] + yy[j] * width;
 		if (ignore_zero && src[idx] == 0) continue;
 		value += src[idx] * w[j];
 		weight += w[j];
 	}
 
-	return weight == 0.f ? 0.f : value / weight;
+	return (weight == 0.f ? DEPTH_INVALID : value / weight);
+	//return static_cast<T>(weight == 0.f ? DEPTH_INVALID : value / weight);
 }
 
 void undistort2(InputArray _src, OutputArray _dst, InputArray _cameraMatrix,
-    InputArray _distCoeffs, InputArray _newCameraMatrix = noArray())
+				InputArray _distCoeffs, InputArray _newCameraMatrix = noArray())
 {
-    Mat src = _src.getMat(), cameraMatrix = _cameraMatrix.getMat();
-    Mat distCoeffs = _distCoeffs.getMat(), newCameraMatrix = _newCameraMatrix.getMat();
+	Mat src = _src.getMat(), cameraMatrix = _cameraMatrix.getMat();
+	Mat distCoeffs = _distCoeffs.getMat(), newCameraMatrix = _newCameraMatrix.getMat();
 
-    _dst.create(src.size(), src.type());
-    Mat dst = _dst.getMat();
+	_dst.create(src.size(), src.type());
+	Mat dst = _dst.getMat();
 
-    CV_Assert(dst.data != src.data);
+	CV_Assert(dst.data != src.data);
 
-    int stripe_size0 = std::min(std::max(1, (1 << 12) / std::max(src.cols, 1)), src.rows);
-    Mat map1(stripe_size0, src.cols, CV_16SC2), map2(stripe_size0, src.cols, CV_16UC1);
+	int stripe_size0 = std::min(std::max(1, (1 << 12) / std::max(src.cols, 1)), src.rows);
+	Mat map1(stripe_size0, src.cols, CV_16SC2), map2(stripe_size0, src.cols, CV_16UC1);
 
-    Mat_<double> A, Ar, I = Mat_<double>::eye(3, 3);
+	Mat_<double> A, Ar, I = Mat_<double>::eye(3, 3);
 
-    cameraMatrix.convertTo(A, CV_64F);
-    if (!distCoeffs.empty())
-        distCoeffs = Mat_<double>(distCoeffs);
-    else
-    {
-        distCoeffs.create(5, 1, CV_64F);
-        distCoeffs = 0.;
-    }
+	cameraMatrix.convertTo(A, CV_64F);
+	if (!distCoeffs.empty())
+		distCoeffs = Mat_<double>(distCoeffs);
+	else
+	{
+		distCoeffs.create(5, 1, CV_64F);
+		distCoeffs = 0.;
+	}
 
-    if (!newCameraMatrix.empty())
-        newCameraMatrix.convertTo(Ar, CV_64F);
-    else
-        A.copyTo(Ar);
+	if (!newCameraMatrix.empty())
+		newCameraMatrix.convertTo(Ar, CV_64F);
+	else
+		A.copyTo(Ar);
 
-    double v0 = Ar(1, 2);
-#define OUTPUT_LOOKUP_TABLE
+	double v0 = Ar(1, 2);
+//#define OUTPUT_LOOKUP_TABLE
 #ifdef OUTPUT_LOOKUP_TABLE
-    FILE *fp = fopen("E:\\table.txt", "w");
+	FILE *fp = fopen("D:\\table1.txt", "w");
 #endif
-    for (int y = 0; y < src.rows; y += stripe_size0)
-    {
-        int stripe_size = std::min(stripe_size0, src.rows - y);
-        Ar(1, 2) = v0 - y;
-        Mat map1_part = map1.rowRange(0, stripe_size),
-            map2_part = map2.rowRange(0, stripe_size),
-            dst_part = dst.rowRange(y, y + stripe_size);
+	for (int y = 0; y < src.rows; y += stripe_size0)
+	{
+		int stripe_size = std::min(stripe_size0, src.rows - y);
+		Ar(1, 2) = v0 - y;
+		Mat map1_part = map1.rowRange(0, stripe_size),
+			map2_part = map2.rowRange(0, stripe_size),
+			dst_part = dst.rowRange(y, y + stripe_size);
 
-        initUndistortRectifyMap(A, distCoeffs, I, Ar, Size(src.cols, stripe_size),
-            map1_part.type(), map1_part, map2_part);
+		initUndistortRectifyMap(A, distCoeffs, I, Ar, Size(src.cols, stripe_size),
+			map1_part.type(), map1_part, map2_part);
 #ifdef OUTPUT_LOOKUP_TABLE
-        Mat mapx, mapy;
-        mapx.create(stripe_size, src.cols, CV_32FC1);
-        mapy.create(stripe_size, src.cols, CV_32FC1);
-        cv::convertMaps(map1_part, map2_part, mapx, mapy, CV_32FC1);
+		Mat mapx, mapy;
+		mapx.create(stripe_size, src.cols, CV_32FC1);
+		mapy.create(stripe_size, src.cols, CV_32FC1);
+		cv::convertMaps(map1_part, map2_part, mapx, mapy, CV_32FC1);
 
-        for (int i = 0; i<stripe_size; i++)
-        for (int j=0; j<512; j++)
-            fprintf(fp, "%g %g %g %g\n", (float)j, (float)(y + i), mapx.at<float>(i, j), mapy.at<float>(i, j));
+		for (int i = 0; i<stripe_size; i++)
+			for (int j=0; j<src.cols; j++)
+				fprintf(fp, "%g %g %g %g\n", (float)j, (float)(y + i), mapx.at<float>(i, j), mapy.at<float>(i, j));
 #endif
-        remap(src, dst_part, map1_part, map2_part, INTER_LINEAR, BORDER_CONSTANT);
-    }
+		remap(src, dst_part, map1_part, map2_part, INTER_LINEAR, BORDER_CONSTANT);
+	}
 #ifdef OUTPUT_LOOKUP_TABLE
-    fclose(fp);
-    exit(0);
+	fclose(fp);
+	//exit(0);
 #endif
 }
 
 int main()
 {
 	Mat cameraMatrix[2], distCoeffs[2];
-	//cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
-	//cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
+	cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
+	cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
 	Mat R, T, E, F;
-
 	{
 		const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
 		const char * intrinsic_filename = INTRINSICS_FILE_PATH;
@@ -748,94 +769,126 @@ int main()
 		{
 			printf("Failed to open file %s\n", extrinsic_filename);
 		}
-
 		fs["R"] >> R;
 		fs["T"] >> T;
 	}
 
-	// read depth file
-	vector<UINT16>	depth_pixels[2];
-	depth_pixels[0].resize(WIDTH*HEIGHT);
-	depth_pixels[1].resize(512 * 424);
-	{
-		FILE *depth_in;
-		printf("%s\n", DEPTH_V1_PATH);
-		fopen_s(&depth_in, DEPTH_V1_PATH, "rb");
-		fread(&depth_pixels[0][0], sizeof(UINT16), depth_pixels[0].size(), depth_in);
-		fclose(depth_in);
-		printf("%s\n", DEPTH_V2_PATH);
-		fopen_s(&depth_in, DEPTH_V2_PATH, "rb");
-		fread(&depth_pixels[1][0], sizeof(UINT16), depth_pixels[1].size(), depth_in);
-		fclose(depth_in);
-	}
-
-	{
-		Mat img_depth_1 = ToCVImage(depth_pixels[1]);
-		depth_pixels[1] = mat_to_vector<UINT16>(img_depth_1);
-	}
-	Mat img_IR[2];
-	std::cout << INFRARED_V1 << '\n' << INFRARED_V2 << '\n';
-	img_IR[0] = imread(INFRARED_V1, 0);
-	{
-		Mat mat = imread(INFRARED_V2, 0);
-		cv::resize(mat, mat, Size(580, 480));
-		img_IR[1].create(Size(640, 480), mat.type());
-		mat.copyTo(img_IR[1](Rect(30, 0, 580, 480)));
-	}
-
-	vector<UINT16> IR[2];
+	Mat img_IR_und[2];
+	Mat img_depth_und[2];
 	vector<UINT16> IR_und[2];
-	//vector<UINT16> depth[2];
 	vector<float> depth_und[2];
-
-	for (int i = 0; i < 2; ++i) {
-		IR[i] = mat_to_vector<UINT16>(img_IR[i]);
-		IR_und[i].resize(WIDTH * HEIGHT);
-		depth_und[i].resize(WIDTH * HEIGHT);
-	}
-
-	vector<pair<float, float>>	undistortLookupTable[2];
-	ReadCalibratedUndistortionTable(undistortLookupTable[0], WIDTH, HEIGHT, TABLE1);
-	ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
-	for (int j = 0; j < 2; ++j) {
-		for (int i = 0; i < WIDTH * HEIGHT; i++) {
-			auto entry = undistortLookupTable[0][i];
-			IR[j][i] = bilinear(entry.first, entry.second, &IR[j][0], WIDTH, HEIGHT);
-			depth_und[j][i] = bilinear(entry.first, entry.second, &depth_pixels[j][0], WIDTH, HEIGHT, true);
+	{
+		// read depth file
+		vector<UINT16>	depth_pixels[2];
+		depth_pixels[0].resize(WIDTH*HEIGHT);
+		depth_pixels[1].resize(512 * 424);
+		{
+			{
+				FILE *depth_in;
+				printf("%s\n", DEPTH_V1_PATH);
+				fopen_s(&depth_in, DEPTH_V1_PATH, "rb");
+				fread(&depth_pixels[0][0], sizeof(UINT16), depth_pixels[0].size(), depth_in);
+				fclose(depth_in);
+			}
+			{
+				FILE *depth_in;
+				printf("%s\n", DEPTH_V2_PATH);
+				fopen_s(&depth_in, DEPTH_V2_PATH, "rb");
+				fread(&depth_pixels[1][0], sizeof(UINT16), depth_pixels[1].size(), depth_in);
+				fclose(depth_in);
+			}
 		}
+
+		Mat img_IR[2];
+		Mat img_depth[2];
+		vector<UINT16> IR[2];
+
+		//for (int i = 0; i < 2; ++i) {
+		//	img_IR[i] = Mat::zeros(HEIGHT, WIDTH, CV_16U);
+		//	img_depth[i] = Mat::zeros(HEIGHT, WIDTH, CV_16U);
+		//}
+		img_depth[0] = ToCVImage(depth_pixels[0]);
+		{
+			// resize v2;
+			img_depth[1] = ResizeAndToCVImage(depth_pixels[1]);
+			//imshow("temp", temp);
+			depth_pixels[1] = mat_to_vector<UINT16>(img_depth[1]);
+		}
+
+		std::cout << INFRARED_V1 << '\n' << INFRARED_V2 << '\n';
+		img_IR[0] = imread(INFRARED_V1, 0);
+		{
+			Mat mat = imread(INFRARED_V2, 0);
+			cv::resize(mat, mat, Size(580, 480));
+			img_IR[1] = Mat::zeros(Size(640, 480), mat.type());
+			mat.copyTo(img_IR[1](Rect(30, 0, 580, 480)));
+			//imwrite("D:\\test.bmp", img_IR[1]);
+		}
+
+		for (int i = 0; i < 2; ++i) {
+			img_IR_und[i] = Mat::zeros(HEIGHT, WIDTH, CV_8U);
+			//cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
+			//cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
+			cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
+			cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
+		}
+		//imshow("test", img_IR[0]);
+		for (int i = 0; i < 2; ++i) {
+			IR[i] = mat_to_vector<UINT16, unsigned char>(img_IR[i]);
+			IR_und[i].resize(WIDTH * HEIGHT);
+			depth_und[i].resize(WIDTH * HEIGHT);
+		}
+
+		vector<pair<float, float>>	undistortLookupTable[2];
+		ReadCalibratedUndistortionTable(undistortLookupTable[0], WIDTH, HEIGHT, TABLE1);
+		ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
+
+		Mat table_x(HEIGHT, WIDTH, CV_8U);
+		Mat table_y(HEIGHT, WIDTH, CV_8U);
+		for (int j = 0; j < HEIGHT; ++j)
+			for (int i = 0; i < WIDTH; ++i) {
+				int idx = j * WIDTH + i;
+				auto entry = undistortLookupTable[1][idx];
+				float x = entry.first;
+				float y = entry.second;
+				table_x.at<unsigned char>(j, i) = (x / 640.f) * 255;
+				table_y.at<unsigned char>(j, i) = (y / 480.f) * 255;
+			}
+		//imshow("table x", table_x);
+		//imshow("table y", table_y);
+
+		for (int j = 0; j < 2; ++j) {
+			for (int i = 0; i < WIDTH * HEIGHT; i++) {
+				auto entry = undistortLookupTable[j][i];
+
+				float ir = bilinear(entry.first, entry.second, &IR[j][0], WIDTH, HEIGHT);
+				IR_und[j][i] = (VALID_DEPTH_TEST(ir) ? ir : 0);
+				depth_und[j][i] = bilinear(entry.first, entry.second, &depth_pixels[j][0], WIDTH, HEIGHT, true);
+			}
+		}
+
+		//for (int i = 0; i < 2; ++i) {
+		//	auto entry = undistortLookupTable[i][240 * WIDTH];
+		//	cout << entry.first << ' ' << entry.second << endl;
+		//}
 	}
 
-	//Mat map11, map12, map21, map22;
-	//Size img_size(WIDTH, HEIGHT);
-	// undistort only;
-	//cv::initUndistortRectifyMap(cameraMatrix[0], distCoeffs[0], Mat::eye(3, 3, CV_64F), cameraMatrix[0], img_size, CV_16SC2, map11, map12);
-	//cv::initUndistortRectifyMap(cameraMatrix[1], distCoeffs[1], Mat::eye(3, 3, CV_64F), cameraMatrix[1], img_size, CV_16SC2, map21, map22);
 
+	Mat ir2 = vector_to_img_uc(IR_und[1], WIDTH, HEIGHT);
+	imwrite("D:\\ir2.bmp", ir2);
+	
 
-	//// undistort
-	////Mat img_IR_1_undistort = img_IR[0].clone();
-	//Mat img_IR_1_undistort(HEIGHT, WIDTH, img_IR[0].type());
-	////cv::undistort(img_IR[0], img_IR_1_undistort, cameraMatrix[0], distCoeffs[0]);
-	//Mat img_IR_2_undistort(HEIGHT, WIDTH, img_IR[1].type());
-	////cv::undistort(img_IR[1], img_IR_2_undistort, cameraMatrix[1], distCoeffs[1]);
-	//Mat img_depth_1_undistort(HEIGHT, WIDTH, img_depth_1.type());
-	////cv::undistort(img_depth_1, img_depth_1_undistort, cameraMatrix[0], distCoeffs[0]);
-	//Mat img_depth_2_undistort(HEIGHT, WIDTH, img_depth_2.type());
-	////cv::undistort(img_depth_2, img_depth_2_undistort, cameraMatrix[1], distCoeffs[1]);
+	//imshow("image IR und 0", img_IR_und[0]);
+	//imshow("image IR und 1", img_IR_und[1]);
 
-	//remap(img_IR[0], img_IR_1_undistort, map11, map12, INTER_LINEAR);
-	//remap(img_depth_1, img_depth_1_undistort, map11, map12, INTER_LINEAR);
-	//remap(img_IR[1], img_IR_2_undistort, map21, map22, INTER_LINEAR);
-	//remap(img_depth_2, img_depth_2_undistort, map21, map22, INTER_LINEAR);
-	//flood_fill(img_depth_1_undistort, 4);
-	//flood_fill(img_depth_2_undistort, 8);
+	//imshow("IR und 0", vector_to_img_uc<UINT16>(IR_und[0], WIDTH, HEIGHT));
+	//imshow("IR und 1", vector_to_img_uc<UINT16>(IR_und[1], WIDTH, HEIGHT));
 
-	//Mat points_1 = calc_points<UINT16>(img_depth_1_undistort, V1_FX, V1_FY, V1_CX, V1_CY);
-	//Mat points_2 = calc_points<UINT16>(img_depth_2_undistort, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-	//if (write_file) {
-	//	writePly(points_1, img_IR_1_undistort, POINTCLOUND_V1);
-	//	writePly(points_2, img_IR_2_undistort, POINTCLOUND_V2);
-	//}
+	//IR_und[0] = mat_to_vector<UINT16>(img_IR_und[0]);
+	//IR_und[1] = mat_to_vector<UINT16>(img_IR_und[1]);
+
+	//depth_und[0] = mat_to_vector<float, UINT16>(img_depth_und[0]);
+	//depth_und[1] = mat_to_vector<float, UINT16>(img_depth_und[1]);
 
 	Mat points_1 = calc_points(depth_und[0], V1_FX, V1_FY, V1_CX, V1_CY);
 	Mat points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
@@ -857,14 +910,12 @@ int main()
 		//tx = ty = tz = 0;
 		//cout << "tx = " << tx << "  ty = " << ty << "  tz = " << tz << endl;
 
-		writePly2(points_1_1, points_2, img_IR_1_undistort, img_IR_2_undistort, POINTCLOUND_ALL_2, tx, ty, tz, 0, 0, 0);
-		writePly(points_1_1, img_IR_1_undistort, POINT_CLOUD_1, WIDTH, HEIGHT, 1, 1, 0, tx, ty, tz);
-		writePly(points_2, img_IR_2_undistort, POINT_CLOUD_2, WIDTH, HEIGHT, 0, 0, 1);
-
 		//int count = 0;
 		//cout << img_IR[1].type() << endl;
-		Mat img_new_IR = Mat::zeros(HEIGHT, WIDTH, img_IR[1].type());
+		Mat img_new_IR = Mat::zeros(HEIGHT, WIDTH, CV_8U);
 		Mat img_new_depth = Mat::zeros(HEIGHT, WIDTH, CV_32F);
+		vector<float> depth1_to_2(WIDTH * HEIGHT, DEPTH_INVALID);
+
 		//Mat img = img_IR_1_undistort.clone();
 		for (int j = 0; j < HEIGHT; ++j) {
 			for (int i = 0; i < WIDTH; ++i) {
@@ -879,84 +930,54 @@ int main()
 				y = int(V2_RESIZED_FY * (points_1_1.at<float>(1, idx) + ty) / z + V2_RESIZED_CY - 0.5f);
 				//cout << x << ' ' << y << ' ' << z << '\n';
 				if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
-					img_new_IR.at<unsigned char>(y, x) = img_IR_1_undistort.at<unsigned char>(j, i);
+					img_new_IR.at<unsigned char>(y, x) = IR_und[0][j*WIDTH + i];
 					img_new_depth.at<float>(y, x) = z;
+					depth1_to_2[y*WIDTH + x] = z;
 				}
 			}
 		}
-		Mat img_depth_2_undistort_f = Mat::zeros(HEIGHT, WIDTH, CV_32F);
-		for (int j = 0; j < HEIGHT; ++j)
-			for (int i = 0; i < WIDTH; ++i) {
-				UINT16 val = img_depth_2_undistort.at<UINT16>(j, i);
-				if (val <  15000)
-					img_depth_2_undistort_f.at<float>(j, i) = (float)img_depth_2_undistort.at<UINT16>(j, i);
-			}
 
-		
-		//double min, max;
-		//minMaxLoc(img_depth_2_undistort_f, &min, &max);
 
-		Mat img_new_depth_cropped;
-		int width_crop = 0, height_crop = 0;
-		Rect roi;
+		vector<float> depth, bias;
+		float smooth = 0.050f;
+		prepare_for_solving_bias(depth,depth1_to_2, depth_und[1]);
+		solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
+
+		Mat new_points_1 = calc_points(depth1_to_2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+		Mat new_points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+
+
+
 		{
-			int x = 0, y = 0;
-			get_valid_rect(img_new_depth, &x, &y, &width_crop, &height_crop);
-			roi = Rect(x, y, width_crop, height_crop);
-			img_new_depth(roi).copyTo(img_new_depth_cropped);
+			auto bias_ = bias;
+			for (int j = 0; j < bias.size(); ++j)
+				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
+			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
+			write_normalized_image(img, "d:\\bias.bmp");
 		}
-		
-		write_normalized_image(img_new_depth_cropped, "D:\\depth_1_und.bmp");
-		write_normalized_image(img_depth_2_undistort_f(roi), "D:\\depth_2_und.bmp");
-		Mat img_diff = img_new_depth_cropped - img_depth_2_undistort_f(roi);
-		double min, max;
-		cv::minMaxLoc(img_diff, &min, &max);
-		std::cout << "min and max: " << min << ' ' << max << endl;
-		Mat img_diff_g;
-		//cv::GaussianBlur(img_diff, img_diff_g, Size(0, 0), 4, 0);
-		//img_diff = img_diff_g;
-		
-		Mat img_diff_pos = Mat::zeros(height_crop, width_crop, CV_8U);
-		Mat img_diff_neg = Mat::zeros(height_crop, width_crop, CV_8U);
-		Mat img_diff_neg_f = Mat::zeros(height_crop, width_crop, CV_32F);
 
-		//img_diff *= 1.f / max;
-		double inv_max = 255.f / std::max(abs(max), abs(min))  * 4.f;
-		//int count = 0;
-		for (int j = 0; j < height_crop; ++j)
-			for (int i = 0; i < width_crop; ++i) {
-				auto val = img_diff.at<float>(j, i);
-				if (val <= -0.1) {
-					img_diff_neg.at<unsigned char>(j, i) = unsigned char(-val * inv_max);
-					img_diff_neg_f.at<float>(j, i) = -val;
-				}
-				else {
-					img_diff_pos.at<unsigned char>(j, i) = unsigned char(val * inv_max);
-					//count++;
-				}
-			}
-		//cout << "count " << count << endl;
-		//cout << "count = " << count << endl;
-		//imshow("RGB", img);
-		imshow("cropped neg", img_diff_neg);
-		image_write(V1_TO_V2_IMAGE, img_new_IR);
-		image_write("D:\\depth_pos.bmp", img_diff_pos);
-		image_write("D:\\depth_neg.bmp", img_diff_neg);
 
-		
-		vector<float> I = mat_to_vector(img_diff_neg_f);
-		std::cout << I.size() << endl;
-		vector<float> result;
-		solve_for_bias(width_crop, height_crop, I, .35, 0, 500, result);
-		
-		Mat img_uc = vector_to_img_uc(result, width_crop, height_crop, inv_max);
-		imshow("result", img_uc);
+		vector<float> depth1_without_bias = depth_und[1];
+		adjust_for_bias(depth1_without_bias, bias);
 
-		Mat img_diff_new = img_depth_2_undistort_f(roi) - vector_to_img_f(result, width_crop, height_crop, 1);
-		imshow("diff result", imgf_to_imguc(img_diff_new));
+		Mat points_2_without_bias = calc_points(depth1_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 
-		auto points = calc_points<float>(img_diff_new, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY, true, roi);
-		writePly(points, img_IR_2_undistort(roi), POINT_CLOUD_DIFF, width_crop, height_crop, 0, 1, 0);
+		writePly(new_points_1, IR_und[0], POINTCLOUND_V1, WIDTH, HEIGHT, 1, 1, 0);
+		writePly(new_points_2, IR_und[1], POINTCLOUND_V2, WIDTH, HEIGHT, 0, 0, 1);
+		writePly(points_2_without_bias, IR_und[1], POINT_CLOUD_DIFF, WIDTH, HEIGHT, 0, 1, 0);
+
+		vector<float> bias2;
+		solve_for_bias(WIDTH, HEIGHT, depth1_to_2, smooth, 0, 500, bias2);
+		Mat points_comp = calc_points(bias2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+		writePly(points_comp, IR_und[1], "D:\\test_bias.ply", WIDTH, HEIGHT, 1, 0, 0);
+
+		{
+			auto bias_ = bias2;
+			for (int j = 0; j < bias.size(); ++j)
+				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
+			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
+			write_normalized_image(img, "d:\\bias2.bmp");
+		}
 	}
 
 	//system("pause");

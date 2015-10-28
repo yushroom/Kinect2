@@ -226,11 +226,22 @@ void KinectSensorV2::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth
 		// end pixel is start + width*height - 1
 		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
 		
-		rawDepthData = vector<UINT16>(pBuffer, pBufferEnd);
+		int idx = 0;
+		rawDepthData.resize(nWidth * nHeight);
+		//while (p != pBuffer) {
+		//	UINT16 depth = *p;
+		//	rawDepthData[idx] = ((depth >= nMinDepth) && (depth <= nMaxDepth)) ? depth : 0;
+		//	idx ++;
+		//	p++;
+		//}
+
+		//rawDepthData = vector<UINT16>(pBuffer, pBufferEnd);
 		
 		while (pBuffer < pBufferEnd)
 		{
 			USHORT depth = *pBuffer;
+
+			rawDepthData[idx++] = ((depth >= nMinDepth) && (depth <= nMaxDepth)) ? depth : 0;
 
 			// To convert to a byte, we're discarding the most-significant
 			// rather than least-significant bits.
