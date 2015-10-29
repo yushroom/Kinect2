@@ -31,10 +31,10 @@ static const bool write_file = false;
 #define HEIGHT 480
 
 #define ROOT_DIR			"D:\\yyk\\image\\"
-#define NUMBER_ID			"12-09-32-0"
+#define NUMBER_ID			"1446086914-1"
 #define IMAGE_DIR			ROOT_DIR NUMBER_ID "\\"
-#define PREFIX_A			IMAGE_DIR "a-" NUMBER_ID
-#define PREFIX_B			IMAGE_DIR "b-" NUMBER_ID
+#define PREFIX_A			IMAGE_DIR "a"
+#define PREFIX_B			IMAGE_DIR "b"
 #define INFRARED_V1			PREFIX_A ".bmp"
 #define INFRARED_V2			PREFIX_B ".bmp"
 #define POINTCLOUND_V1		PREFIX_A "-point.ply"
@@ -188,7 +188,7 @@ void prepare_for_solving_bias(std::vector<float> &depth,
 		depth[i] = (VALID_DEPTH_TEST(depth1[i]) && VALID_DEPTH_TEST(depth2[i])) ? depth2[i]-depth1[i] : DEPTH_INVALID;
 }
 
-Mat ResizeAndToCVImage(const vector<UINT16> depth_pixels){
+Mat ResizeAndToCVImage(const vector<UINT16>& depth_pixels){
 	Mat mat = Mat::zeros(Size(512, 424), CV_16UC1);
 	for (int j = 0; j < 424; j++) {
 		for (int i = 0; i < 512; ++i) {
@@ -196,7 +196,7 @@ Mat ResizeAndToCVImage(const vector<UINT16> depth_pixels){
 		}
 	}
 	//printf("%d %d\n", mat.cols, mat.rows);
-	cv::resize(mat, mat, Size(580, 480));
+	cv::resize(mat, mat, Size(580, 480), 0, 0, INTER_NEAREST);
 	//printf("%d %d\n", mat.cols, mat.rows);
 	Mat new_mat = Mat::zeros(Size(640, 480), mat.type());
 	mat.copyTo(new_mat(Rect(30, 0, 580, 480)));
@@ -216,38 +216,38 @@ Mat ToCVImage(const vector<UINT16>& src)
 
 #define ZERO(x) ((fabsf(x) < 1e-3f))
 
-inline void writePly(const Mat& points, const Mat& IR, const char *filename, int w = WIDTH, int h = HEIGHT, 
-					 float r = 1, float g = 1, float b = 1, float tx = 0, float ty = 0, float tz = 0)
-{
-	FILE *fp;
-	fopen_s(&fp, filename, "w");
-	fprintf(fp, "ply\n");
-	fprintf(fp, "format ascii 1.0\n");
-	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
-	fprintf(fp, "element vertex %d\n", w * h);
-	fprintf(fp, "property float x\n");
-	fprintf(fp, "property float y\n");
-	fprintf(fp, "property float z\n");
-	fprintf(fp, "property uchar red\n");
-	fprintf(fp, "property uchar green\n");
-	fprintf(fp, "property uchar blue\n");
-	fprintf(fp, "element face 0\n");
-	fprintf(fp, "property list uchar int vertex_index\n");
-	fprintf(fp, "end_header\n");
+//inline void writePly(const Mat& points, const Mat& IR, const char *filename, int w = WIDTH, int h = HEIGHT, 
+//					 float r = 1, float g = 1, float b = 1, float tx = 0, float ty = 0, float tz = 0)
+//{
+//	FILE *fp;
+//	fopen_s(&fp, filename, "w");
+//	fprintf(fp, "ply\n");
+//	fprintf(fp, "format ascii 1.0\n");
+//	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
+//	fprintf(fp, "element vertex %d\n", w * h);
+//	fprintf(fp, "property float x\n");
+//	fprintf(fp, "property float y\n");
+//	fprintf(fp, "property float z\n");
+//	fprintf(fp, "property uchar red\n");
+//	fprintf(fp, "property uchar green\n");
+//	fprintf(fp, "property uchar blue\n");
+//	fprintf(fp, "element face 0\n");
+//	fprintf(fp, "property list uchar int vertex_index\n");
+//	fprintf(fp, "end_header\n");
+//
+//	for (int j = 0; j < h; ++j)
+//		for (int i = 0; i < w; ++i) {
+//			int idx = j * w + i;
+//			int c = IR.at<unsigned char>(j, i);
+//			float x = points.at<float>(0, idx) + tx;
+//			float y = points.at<float>(1, idx) + ty;
+//			float z = points.at<float>(2, idx) + tz;
+//			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, unsigned char(c*r), unsigned char(c*g), unsigned char(c*b));
+//		}
+//	fclose(fp);
+//}
 
-	for (int j = 0; j < h; ++j)
-		for (int i = 0; i < w; ++i) {
-			int idx = j * w + i;
-			int c = IR.at<unsigned char>(j, i);
-			float x = points.at<float>(0, idx) + tx;
-			float y = points.at<float>(1, idx) + ty;
-			float z = points.at<float>(2, idx) + tz;
-			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, unsigned char(c*r), unsigned char(c*g), unsigned char(c*b));
-		}
-	fclose(fp);
-}
-
-inline void writePly(const Mat& points, const vector<UINT16>& IR, const char *filename, int w = WIDTH, int h = HEIGHT, 
+inline void writePly(const Mat& points, const vector<unsigned char>& IR, const char *filename, int w = WIDTH, int h = HEIGHT, 
 					 float r = 1, float g = 1, float b = 1, float tx = 0, float ty = 0, float tz = 0)
 {
 	FILE *fp;
@@ -273,46 +273,48 @@ inline void writePly(const Mat& points, const vector<UINT16>& IR, const char *fi
 			int c = IR[idx];
 			float x = points.at<float>(0, idx) + tx;
 			float y = points.at<float>(1, idx) + ty;
+			y = -y;
 			float z = points.at<float>(2, idx) + tz;
+			z = -z;
 			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, unsigned char(c*r), unsigned char(c*g), unsigned char(c*b));
 		}
 		fclose(fp);
 }
 
-inline void writePly_roi(const Mat& points, const Mat& IR, const char *filename, bool cropped = false, cv::Rect rect = Rect(0, 0, WIDTH, HEIGHT), float r = 1, float g = 1, float b = 1)
-{
-	FILE *fp;
-	fopen_s(&fp, filename, "w");
-	fprintf(fp, "ply\n");
-	fprintf(fp, "format ascii 1.0\n");
-	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
-	fprintf(fp, "element vertex %d\n", rect.width * rect.height);
-	fprintf(fp, "property float x\n");
-	fprintf(fp, "property float y\n");
-	fprintf(fp, "property float z\n");
-	fprintf(fp, "property uchar red\n");
-	fprintf(fp, "property uchar green\n");
-	fprintf(fp, "property uchar blue\n");
-	fprintf(fp, "element face 0\n");
-	fprintf(fp, "property list uchar int vertex_index\n");
-	fprintf(fp, "end_header\n");
-
-	if (!cropped) {
-		for (int j = 0; j < rect.height; ++j) {
-			for (int i = 0; i < rect.width; ++i) {
-				int idx = j * rect.width + i;
-				int c = IR.at<unsigned char>(j+rect.height, i+rect.width);
-				float x = points.at<float>(0, idx);
-				float y = points.at<float>(1, idx);
-				float z = points.at<float>(2, idx);
-				fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, int(r*c), int(g*c), int(b*c));
-			}
-		}
-	}
-
-
-	fclose(fp);
-}
+//inline void writePly_roi(const Mat& points, const Mat& IR, const char *filename, bool cropped = false, cv::Rect rect = Rect(0, 0, WIDTH, HEIGHT), float r = 1, float g = 1, float b = 1)
+//{
+//	FILE *fp;
+//	fopen_s(&fp, filename, "w");
+//	fprintf(fp, "ply\n");
+//	fprintf(fp, "format ascii 1.0\n");
+//	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
+//	fprintf(fp, "element vertex %d\n", rect.width * rect.height);
+//	fprintf(fp, "property float x\n");
+//	fprintf(fp, "property float y\n");
+//	fprintf(fp, "property float z\n");
+//	fprintf(fp, "property uchar red\n");
+//	fprintf(fp, "property uchar green\n");
+//	fprintf(fp, "property uchar blue\n");
+//	fprintf(fp, "element face 0\n");
+//	fprintf(fp, "property list uchar int vertex_index\n");
+//	fprintf(fp, "end_header\n");
+//
+//	if (!cropped) {
+//		for (int j = 0; j < rect.height; ++j) {
+//			for (int i = 0; i < rect.width; ++i) {
+//				int idx = j * rect.width + i;
+//				int c = IR.at<unsigned char>(j+rect.height, i+rect.width);
+//				float x = points.at<float>(0, idx);
+//				float y = points.at<float>(1, idx);
+//				float z = points.at<float>(2, idx);
+//				fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, int(r*c), int(g*c), int(b*c));
+//			}
+//		}
+//	}
+//
+//
+//	fclose(fp);
+//}
 
 
 struct Vertex {
@@ -321,7 +323,7 @@ struct Vertex {
 };
 
 inline void writePly2(const Mat& points1, const Mat& points2, const Mat& IR1, const Mat& IR2, const char *filename,
-	float tx1 = 0, float ty1 = 0, float tz1 = 0, float tx2 = 0, float ty2 = 0, float tz2 = 0)
+					  float tx1 = 0, float ty1 = 0, float tz1 = 0, float tx2 = 0, float ty2 = 0, float tz2 = 0)
 {
 	int offset = 0;
 	FILE *fp;
@@ -352,21 +354,21 @@ inline void writePly2(const Mat& points1, const Mat& points2, const Mat& IR1, co
 			//	continue;
 			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, c, c, 0);	// v1 Yellow
 		}
-	for (int j = offset; j < HEIGHT - offset; ++j)
-		for (int i = offset; i < WIDTH - offset; ++i) {
-			int idx = j * WIDTH + i;
-			int c = IR2.at<unsigned char>(j, i);
-			float x = points2.at<float>(0, idx) + tx2;
-			float y = points2.at<float>(1, idx) + ty2;
-			float z = points2.at<float>(2, idx) + tz2;
-			//if (x * y * z == 0)
-			//	continue;
-			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, 0, 0, c);	// v2 blue
-		}
-	//for (int i = 0; i < WIDTH * HEIGHT; i++) {
-	//	fprintf_s(fp, "%f %f %f %d %d %d\n", point_cloud[i].x, point_cloud[i].y, point_cloud[i].z, infrared_pixels[i], infrared_pixels[i], infrared_pixels[i]);
-	//}
-	fclose(fp);
+		for (int j = offset; j < HEIGHT - offset; ++j)
+			for (int i = offset; i < WIDTH - offset; ++i) {
+				int idx = j * WIDTH + i;
+				int c = IR2.at<unsigned char>(j, i);
+				float x = points2.at<float>(0, idx) + tx2;
+				float y = points2.at<float>(1, idx) + ty2;
+				float z = points2.at<float>(2, idx) + tz2;
+				//if (x * y * z == 0)
+				//	continue;
+				fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, 0, 0, c);	// v2 blue
+			}
+			//for (int i = 0; i < WIDTH * HEIGHT; i++) {
+			//	fprintf_s(fp, "%f %f %f %d %d %d\n", point_cloud[i].x, point_cloud[i].y, point_cloud[i].z, infrared_pixels[i], infrared_pixels[i], infrared_pixels[i]);
+			//}
+			fclose(fp);
 }
 
 template <typename T>
@@ -388,7 +390,7 @@ Mat calc_points(Mat depth_image, float fx, float fy, float cx, float cy, bool cr
 			points.at<float>(2, idx) = d;
 		}
 
-	return points;
+		return points;
 }
 
 Mat calc_points(vector<float> depth, float fx, float fy, float cx, float cy, bool cropped = true, cv::Rect roi = Rect(0, 0, WIDTH, HEIGHT)) {
@@ -433,7 +435,7 @@ Mat calc_points2(Mat depth_image, float fx, float fy, float cx, float cy) {
 			points.at<float>(2, idx) = d;
 		}
 
-	return points;
+		return points;
 }
 
 void flood_fill(Mat& img, int offset = 2)
@@ -471,20 +473,12 @@ void flood_fill(Mat& img, int offset = 2)
 	temp.copyTo(img);
 }
 
-void get_valid_rect(const Mat& image, int* out_x, int* out_y, int* out_width, int* out_height)
-{
-	*out_x = 110;
-	*out_y = 60;
-	*out_width = 500 - 110;
-	*out_height = 360 - 60;
-}
-
 void image_show(const char* title, const Mat& image) {
 	if (write_file)
 		imshow(title, image);
 }
 
-void image_write(const char* path, const Mat& image) {
+void image_write(const string& path, const Mat& image) {
 	if (write_file)
 		imwrite(path, image);
 }
@@ -493,7 +487,7 @@ template<typename T>
 vector<T> mat_to_vector(const Mat& img) {
 	int w = img.cols;
 	int h = img.rows;
-	cout << w << ' ' << h <<endl;
+	//cout << w << ' ' << h <<endl;
 	vector<T> vec;
 	vec.resize(w*h);
 	for (int j = 0; j < h; ++j) {
@@ -531,16 +525,6 @@ Mat vector_to_img_uc(const vector<T>& vec, int w, int h, float scale = 1) {
 		return img;
 }
 
-//Mat vector_to_img_uc(const vector<float>& vec, int w, int h, float scale) {
-//	Mat img(h, w, CV_8U);
-//	for (int j = 0; j < h; ++j)
-//		for (int i = 0; i < w; ++i) {
-//			int idx = j * w + i;
-//			img.at<unsigned char>(j, i) = unsigned char(vec[idx] * scale);
-//		}
-//	return img;
-//}
-
 Mat vector_to_img_f(const vector<float>& vec, int w, int h, float scale = 1) {
 	Mat img(h, w, CV_32F);
 	for (int j = 0; j < h; ++j)
@@ -548,7 +532,7 @@ Mat vector_to_img_f(const vector<float>& vec, int w, int h, float scale = 1) {
 			int idx = j * w + i;
 			img.at<float>(j, i) = float(vec[idx] * scale);
 		}
-	return img;
+		return img;
 }
 
 Mat imgf_to_imguc(const Mat& img_f, float scale = 1) {
@@ -560,7 +544,7 @@ Mat imgf_to_imguc(const Mat& img_f, float scale = 1) {
 			int idx = j * w + i;
 			img_uc.at<unsigned char>(j, i) = unsigned char(img_f.at<float>(j, i) * scale);
 		}
-	return img_uc;
+		return img_uc;
 }
 
 void write_normalized_image(const Mat &img, const char *filename)
@@ -577,68 +561,34 @@ void write_normalized_image(const Mat &img, const char *filename)
 			output.at<BYTE>(y, x) = BYTE(v * 255);
 		}
 
-	image_write(filename, output);
+		image_write(filename, output);
 }
 
-//void solve_for_bias(const int w, const int h, const std::vector<float> &I,
-//	const float alpha, const float lambda, const int niter,
-//	std::vector<float> &result)
-//{
-//	const int NUM_NEIGHBOR = 4;
-//	static int dir[NUM_NEIGHBOR * 2] = { -1, 0, 1, 0, 0, -1, 0, 1 };
-//
-//	advmath::la_matrix_csr<float> A;
-//	std::vector<float> vb;
-//	A.column = w*h;
-//
-//	for (int y = 0; y < h; y++)
-//		for (int x = 0; x < w; x++)
-//		{
-//			int idx_first, idx_last, idx = x + y*w;
-//
-//			//data term
-//			idx_first = (int)A.val.size();
-//			idx_last = (int)A.val.size();
-//
-//			A.val.push_back(alpha);
-//			A.cols.push_back(idx);
-//
-//			A.ptrb.push_back(idx_first);
-//			A.ptre.push_back(idx_last + 1);
-//			vb.push_back(alpha*I[idx]);
-//			A.row++;
-//
-//			//smoothness terms
-//			for (int i = 0; i < NUM_NEIGHBOR; i++)
-//			{
-//				int xx = x + dir[i * 2 + 0],
-//					yy = y + dir[i * 2 + 1];
-//				if (xx >= 0 && xx < w && yy >= 0 && yy < h && idx < xx + yy*w)
-//				{
-//					idx_first = (int)A.val.size();
-//					idx_last = (int)A.val.size();
-//
-//					A.val.push_back(1.0f);
-//					A.cols.push_back(idx);
-//					A.val.push_back(-1.0f);
-//					A.cols.push_back(xx + yy*w);
-//
-//					A.ptrb.push_back(idx_first);
-//					A.ptre.push_back(idx_last + 2);
-//					vb.push_back(0);
-//					A.row++;
-//				}
-//			}
-//		}
-//
-//	advmath::la_vector<float> b(vb);
-//	//sparse least square
-//	advmath::la_vector<float> x;
-//	advmath::ssplsqr(x, A, b, lambda, niter, true);
-//
-//	result.resize(x.length);
-//	std::memcpy(&result[0], x.v, sizeof(float)*x.length);
-//}
+template <typename T>
+void write_normalized_vector(const vector<T> &img, const string& filename, int w = WIDTH, int h = HEIGHT)
+{
+	//auto vmax = *std::max_element(img.begin(), img.end());
+	//auto vmin = *std::min_element(img.begin(), img.end());
+	float vmax = -1, vmin = DEPTH_INVALID;
+	for (int i = 1; i < w * h; ++i) {
+		if (img[i] != 0 && img[i] < vmin) vmin = img[i];
+		if (VALID_DEPTH_TEST(img[i]) && img[i] > vmax) vmax = img[i];
+	}
+
+	cout << "[write_normalized_vector] max = " << vmax << "  min = " << vmin << endl;
+	waitKey();
+
+	Mat output = Mat::zeros(h, w, CV_8U);
+	for (int y = 0; y < h; y++)
+		for (int x = 0; x < w; x++)
+		{
+			int idx = x + y * w;
+			float v = float(img[idx] - vmin) / float(vmax - vmin);
+			output.at<BYTE>(y, x) = BYTE(v * 255);
+		}
+
+	image_write(filename, output);
+}
 
 inline void ReadCalibratedUndistortionTable(vector<pair<float, float>> &undistortLT, int width, int height, const char *filepath)
 {
@@ -659,7 +609,8 @@ inline void ReadCalibratedUndistortionTable(vector<pair<float, float>> &undistor
 	return;																					 
 }
 
-inline float bilinear(float x, float y, UINT16* src, int width, int height, bool ignore_zero = false) {
+template <typename T>
+inline float bilinear(float x, float y, const vector<T>& src, int width, int height, bool ignore_zero = false) {
 	int ix0 = x, iy0 = y, ix1 = ix0 + 1, iy1 = iy0 + 1;
 	float qx1 = x - ix0, qy1 = y - iy0, qx0 = 1.f - qx1, qy0 = 1.f - qy1;
 
@@ -670,8 +621,7 @@ inline float bilinear(float x, float y, UINT16* src, int width, int height, bool
 	int yy[] = {iy0, iy0, iy1, iy1};
 
 	for (int j = 0; j<4; j++) {
-		if (xx[j] < 0 || xx[j] >= width
-			|| yy[j] < 0 || yy[j] >= height)
+		if (xx[j] < 0 || xx[j] >= width || yy[j] < 0 || yy[j] >= height)
 			continue;
 		int idx = xx[j] + yy[j] * width;
 		if (ignore_zero && src[idx] == 0) continue;
@@ -683,88 +633,78 @@ inline float bilinear(float x, float y, UINT16* src, int width, int height, bool
 	//return static_cast<T>(weight == 0.f ? DEPTH_INVALID : value / weight);
 }
 
-void undistort2(InputArray _src, OutputArray _dst, InputArray _cameraMatrix,
-				InputArray _distCoeffs, InputArray _newCameraMatrix = noArray())
+
+float fr(UINT16 val) {
+	int range = 1;
+	if (val > range) 
+		return 0;
+	else
+		return (range-val) / range; 
+}
+
+static vector<UINT16> resize_image(const vector<UINT16>& vec, int width = 512, int height = 424, int target_w = 580, int target_h = 480, bool ignore_zero = true)
 {
-	Mat src = _src.getMat(), cameraMatrix = _cameraMatrix.getMat();
-	Mat distCoeffs = _distCoeffs.getMat(), newCameraMatrix = _newCameraMatrix.getMat();
+	vector<UINT16> ret(WIDTH * HEIGHT, 0);
 
-	_dst.create(src.size(), src.type());
-	Mat dst = _dst.getMat();
+	// Bilateral filter
+	float fx, fy, qx0, qx1, qy0, qy1;
+	int ix0, ix1, iy0, iy1;
 
-	CV_Assert(dst.data != src.data);
+	for (int y = 0; y < target_h; ++y) {
+		fy = float(y) / target_h * height;
+		iy0 = int(fy); iy1 = iy0 + 1;
+		qy1 = fy - iy0; qy0 = 1.f - qy1;
 
-	int stripe_size0 = std::min(std::max(1, (1 << 12) / std::max(src.cols, 1)), src.rows);
-	Mat map1(stripe_size0, src.cols, CV_16SC2), map2(stripe_size0, src.cols, CV_16UC1);
+		for (int x = 0; x < target_w; ++x) {
+			fx = float(x) / target_w * width;
+			ix0 = int(fx); ix1 = ix0 + 1;
+			qx1 = fx - ix0; qx0 = 1.f - qx1;
 
-	Mat_<double> A, Ar, I = Mat_<double>::eye(3, 3);
+			UINT16 I0 = vec[ix0 + iy0 * width];
 
-	cameraMatrix.convertTo(A, CV_64F);
-	if (!distCoeffs.empty())
-		distCoeffs = Mat_<double>(distCoeffs);
-	else
-	{
-		distCoeffs.create(5, 1, CV_64F);
-		distCoeffs = 0.;
+			float weight = 0.f, value = 0.f;
+			float w[] = { qx0*qy0, qx1*qy0, qx0*qy1, qx1*qy1 };
+			//pair<int, int> xy[] = { { ix0, iy0 }, { ix1, iy0 }, { ix0, iy1 }, { ix1, iy1 } };
+			int xx[] = {ix0, ix1, ix0, ix1};
+			int yy[] = {iy0, iy0, iy1, iy1};
+
+			for (int j = 0; j<4; j++) {
+				if (xx[j] < 0 || xx[j] >= width || yy[j] < 0 || yy[j] >= height)
+					continue;
+				int idx = xx[j] + yy[j] * width;
+				UINT16 I = vec[idx];
+				if (ignore_zero && I == 0) continue;
+				w[j] *= fr(fabsf(I - I0));
+				value += I * w[j];
+				weight += w[j];
+			}
+
+			ret[x + 30 + y * WIDTH] = (weight == 0.f) ? 0 : value / weight;
+		}
 	}
 
-	if (!newCameraMatrix.empty())
-		newCameraMatrix.convertTo(Ar, CV_64F);
-	else
-		A.copyTo(Ar);
-
-	double v0 = Ar(1, 2);
-//#define OUTPUT_LOOKUP_TABLE
-#ifdef OUTPUT_LOOKUP_TABLE
-	FILE *fp = fopen("D:\\table1.txt", "w");
-#endif
-	for (int y = 0; y < src.rows; y += stripe_size0)
-	{
-		int stripe_size = std::min(stripe_size0, src.rows - y);
-		Ar(1, 2) = v0 - y;
-		Mat map1_part = map1.rowRange(0, stripe_size),
-			map2_part = map2.rowRange(0, stripe_size),
-			dst_part = dst.rowRange(y, y + stripe_size);
-
-		initUndistortRectifyMap(A, distCoeffs, I, Ar, Size(src.cols, stripe_size),
-			map1_part.type(), map1_part, map2_part);
-#ifdef OUTPUT_LOOKUP_TABLE
-		Mat mapx, mapy;
-		mapx.create(stripe_size, src.cols, CV_32FC1);
-		mapy.create(stripe_size, src.cols, CV_32FC1);
-		cv::convertMaps(map1_part, map2_part, mapx, mapy, CV_32FC1);
-
-		for (int i = 0; i<stripe_size; i++)
-			for (int j=0; j<src.cols; j++)
-				fprintf(fp, "%g %g %g %g\n", (float)j, (float)(y + i), mapx.at<float>(i, j), mapy.at<float>(i, j));
-#endif
-		remap(src, dst_part, map1_part, map2_part, INTER_LINEAR, BORDER_CONSTANT);
-	}
-#ifdef OUTPUT_LOOKUP_TABLE
-	fclose(fp);
-	//exit(0);
-#endif
+	return ret;
 }
 
 int main()
 {
-	Mat cameraMatrix[2], distCoeffs[2];
-	cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
-	cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
+	//Mat cameraMatrix[2], distCoeffs[2];
+	//cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
+	//cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
 	Mat R, T, E, F;
 	{
 		const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
-		const char * intrinsic_filename = INTRINSICS_FILE_PATH;
+		//	const char * intrinsic_filename = INTRINSICS_FILE_PATH;
 		FileStorage fs;
-		fs.open(intrinsic_filename, CV_STORAGE_READ);
-		if (!fs.isOpened())
-		{
-			printf("Failed to open file %s\n", intrinsic_filename);
-		}
-		fs["M1"] >> cameraMatrix[0];
-		fs["D1"] >> distCoeffs[0];
-		fs["M2"] >> cameraMatrix[1];
-		fs["D2"] >> distCoeffs[1];
+		//	fs.open(intrinsic_filename, CV_STORAGE_READ);
+		//	if (!fs.isOpened())
+		//	{
+		//		printf("Failed to open file %s\n", intrinsic_filename);
+		//	}
+		//	fs["M1"] >> cameraMatrix[0];
+		//	fs["D1"] >> distCoeffs[0];
+		//	fs["M2"] >> cameraMatrix[1];
+		//	fs["D2"] >> distCoeffs[1];
 
 		fs.open(extrinsic_filename, CV_STORAGE_READ);
 		if (!fs.isOpened())
@@ -775,9 +715,9 @@ int main()
 		fs["T"] >> T;
 	}
 
-	Mat img_IR_und[2];
-	Mat img_depth_und[2];
-	vector<UINT16> IR_und[2];
+	//Mat img_IR_und[2];
+	//Mat img_depth_und[2];
+	vector<unsigned char> IR_und[2];
 	vector<float> depth_und[2];
 	{
 		// read depth file
@@ -785,36 +725,35 @@ int main()
 		depth_pixels[0].resize(WIDTH*HEIGHT);
 		depth_pixels[1].resize(512 * 424);
 		{
-			{
-				FILE *depth_in;
-				printf("%s\n", DEPTH_V1_PATH);
-				fopen_s(&depth_in, DEPTH_V1_PATH, "rb");
-				fread(&depth_pixels[0][0], sizeof(UINT16), depth_pixels[0].size(), depth_in);
-				fclose(depth_in);
-			}
-			{
-				FILE *depth_in;
-				printf("%s\n", DEPTH_V2_PATH);
-				fopen_s(&depth_in, DEPTH_V2_PATH, "rb");
-				fread(&depth_pixels[1][0], sizeof(UINT16), depth_pixels[1].size(), depth_in);
-				fclose(depth_in);
-			}
+			FILE *depth_in;
+			printf("%s\n", DEPTH_V1_PATH);
+			fopen_s(&depth_in, DEPTH_V1_PATH, "rb");
+			fread(&depth_pixels[0][0], sizeof(UINT16), depth_pixels[0].size(), depth_in);
+			fclose(depth_in);
+			printf("%s\n", DEPTH_V2_PATH);
+			fopen_s(&depth_in, DEPTH_V2_PATH, "rb");
+			fread(&depth_pixels[1][0], sizeof(UINT16), depth_pixels[1].size(), depth_in);
+			fclose(depth_in);
 		}
 
 		Mat img_IR[2];
 		Mat img_depth[2];
-		vector<UINT16> IR[2];
+		vector<unsigned char> IR[2];
 
-		//for (int i = 0; i < 2; ++i) {
-		//	img_IR[i] = Mat::zeros(HEIGHT, WIDTH, CV_16U);
-		//	img_depth[i] = Mat::zeros(HEIGHT, WIDTH, CV_16U);
-		//}
+		// load IRV1 and resize IRV2;
 		img_depth[0] = ToCVImage(depth_pixels[0]);
 		{
 			// resize v2;
-			img_depth[1] = ResizeAndToCVImage(depth_pixels[1]);
-			//imshow("temp", temp);
-			depth_pixels[1] = mat_to_vector<UINT16>(img_depth[1]);
+			//img_depth[1] = ResizeAndToCVImage(depth_pixels[1]);
+			//depth_pixels[1] = mat_to_vector<UINT16>(img_depth[1]);
+			//auto d1 = mat_to_vector<UINT16>(img_depth[1]);
+			//write_normalized_vector(d1, "D:\\1.bmp");
+
+			//depth_pixels[1] = resize_image(depth_pixels[1]);
+			//auto d2 = resize_image(depth_pixels[1]);
+			//write_normalized_vector(d2, "D:\\2.bmp");
+
+			depth_pixels[1] = resize_image(depth_pixels[1]);
 		}
 
 		std::cout << INFRARED_V1 << '\n' << INFRARED_V2 << '\n';
@@ -824,19 +763,18 @@ int main()
 			cv::resize(mat, mat, Size(580, 480));
 			img_IR[1] = Mat::zeros(Size(640, 480), mat.type());
 			mat.copyTo(img_IR[1](Rect(30, 0, 580, 480)));
-			//imwrite("D:\\test.bmp", img_IR[1]);
 		}
 
+		//for (int i = 0; i < 2; ++i) {
+		//	img_IR_und[i] = Mat::zeros(HEIGHT, WIDTH, CV_8U);
+		//	//cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
+		//	//cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
+		//	cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
+		//	cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
+		//}
+
 		for (int i = 0; i < 2; ++i) {
-			img_IR_und[i] = Mat::zeros(HEIGHT, WIDTH, CV_8U);
-			//cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
-			//cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
-			cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
-			cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
-		}
-		//imshow("test", img_IR[0]);
-		for (int i = 0; i < 2; ++i) {
-			IR[i] = mat_to_vector<UINT16, unsigned char>(img_IR[i]);
+			IR[i] = mat_to_vector<unsigned char>(img_IR[i]);
 			IR_und[i].resize(WIDTH * HEIGHT);
 			depth_und[i].resize(WIDTH * HEIGHT);
 		}
@@ -847,7 +785,7 @@ int main()
 
 		Mat table_x(HEIGHT, WIDTH, CV_8U);
 		Mat table_y(HEIGHT, WIDTH, CV_8U);
-		for (int j = 0; j < HEIGHT; ++j)
+		for (int j = 0; j < HEIGHT; ++j) {
 			for (int i = 0; i < WIDTH; ++i) {
 				int idx = j * WIDTH + i;
 				auto entry = undistortLookupTable[1][idx];
@@ -856,29 +794,29 @@ int main()
 				table_x.at<unsigned char>(j, i) = (x / 640.f) * 255;
 				table_y.at<unsigned char>(j, i) = (y / 480.f) * 255;
 			}
-		//imshow("table x", table_x);
-		//imshow("table y", table_y);
+		}
+
+		write_normalized_vector(depth_pixels[0], string(IMAGE_DIR) + "a-depth.bmp");
+		write_normalized_vector(depth_pixels[1], string(IMAGE_DIR) + "b-depth.bmp");
 
 		for (int j = 0; j < 2; ++j) {
 			for (int i = 0; i < WIDTH * HEIGHT; i++) {
 				auto entry = undistortLookupTable[j][i];
-
-				float ir = bilinear(entry.first, entry.second, &IR[j][0], WIDTH, HEIGHT);
+				float ir = bilinear<unsigned char>(entry.first, entry.second, IR[j], WIDTH, HEIGHT);
 				IR_und[j][i] = (VALID_DEPTH_TEST(ir) ? ir : 0);
-				depth_und[j][i] = bilinear(entry.first, entry.second, &depth_pixels[j][0], WIDTH, HEIGHT, true);
+				depth_und[j][i] = bilinear<UINT16>(entry.first, entry.second, depth_pixels[j], WIDTH, HEIGHT, true);
 			}
 		}
 
-		//for (int i = 0; i < 2; ++i) {
-		//	auto entry = undistortLookupTable[i][240 * WIDTH];
-		//	cout << entry.first << ' ' << entry.second << endl;
+		//for (int i = 0; i < WIDTH * HEIGHT; ++i) {
+		//	//depth_und[0][i] = depth_pixels[0][i] == 0 ? DEPTH_INVALID : depth_pixels[0][i];
+		//	depth_und[1][i] = depth_pixels[1][i] == 0 ? DEPTH_INVALID : depth_pixels[1][i];
 		//}
 	}
 
+	imwrite(UNDISTORT_IR1_PATH, vector_to_img_uc(IR_und[0], WIDTH, HEIGHT));
+	imwrite(UNDISTORT_IR2_PATH, vector_to_img_uc(IR_und[1], WIDTH, HEIGHT));
 
-	Mat ir2 = vector_to_img_uc(IR_und[1], WIDTH, HEIGHT);
-	imwrite("D:\\ir2.bmp", ir2);
-	
 
 	//imshow("image IR und 0", img_IR_und[0]);
 	//imshow("image IR und 1", img_IR_und[1]);
@@ -939,21 +877,25 @@ int main()
 			}
 		}
 
+		image_write(V1_TO_V2_IMAGE, img_new_IR);
+
 
 		vector<float> depth, bias;
 		float smooth = 0.350f;
-		prepare_for_solving_bias(depth,depth1_to_2, depth_und[1]);
+		prepare_for_solving_bias(depth, depth1_to_2, depth_und[1]);
 		solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
 
 		Mat new_points_1 = calc_points(depth1_to_2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 		Mat new_points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+
 
 		{
 			auto bias_ = bias;
 			for (int j = 0; j < bias.size(); ++j)
 				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
 			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
-			write_normalized_image(img, "d:\\bias.bmp");
+			string path = std::string(IMAGE_DIR) + "bias.bmp";
+			write_normalized_image(img, path.c_str());
 		}
 
 
@@ -964,19 +906,20 @@ int main()
 
 		writePly(new_points_1, IR_und[0], POINTCLOUND_V1, WIDTH, HEIGHT, 1, 1, 0);
 		writePly(new_points_2, IR_und[1], POINTCLOUND_V2, WIDTH, HEIGHT, 0, 0, 1);
-		writePly(points_2_without_bias, IR_und[1], POINT_CLOUD_DIFF, WIDTH, HEIGHT, 0, 1, 0);
+		writePly(points_2_without_bias, IR_und[1], (string(IMAGE_DIR) + "diff.ply").c_str(), WIDTH, HEIGHT, 0, 1, 0);
 
 		vector<float> bias2;
 		solve_for_bias(WIDTH, HEIGHT, depth1_to_2, smooth, 0, 500, bias2);
 		Mat points_comp = calc_points(bias2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-		writePly(points_comp, IR_und[1], "D:\\test_bias.ply", WIDTH, HEIGHT, 1, 0, 0);
+		writePly(points_comp, IR_und[1], (string(IMAGE_DIR) + "test_bias.ply").c_str(), WIDTH, HEIGHT, 1, 0, 0);
 
 		{
 			auto bias_ = bias2;
 			for (int j = 0; j < bias.size(); ++j)
 				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
 			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
-			write_normalized_image(img, "d:\\bias2.bmp");
+			string path = std::string(IMAGE_DIR) + "bias2.bmp";
+			write_normalized_image(img, path.c_str());
 		}
 	}
 
