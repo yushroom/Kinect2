@@ -15,11 +15,13 @@ using namespace std;
 
 typedef unsigned short UINT16;
 
+#define WRITE_BB_BIN_ONLY
+
 #ifdef _DEBUG
 #define WRITE_FILE
 #endif
 
-#define WRITE_FILE
+//#define WRITE_FILE
 
 #ifdef WRITE_FILE
 static const bool write_file = true;
@@ -30,38 +32,35 @@ static const bool write_file = false;
 #define WIDTH 640
 #define HEIGHT 480
 
-#define ROOT_DIR			"D:\\yyk\\image\\"
-#define NUMBER_ID			"1446086914-1"
-#define IMAGE_DIR			ROOT_DIR NUMBER_ID "\\"
-#define PREFIX_A			IMAGE_DIR "a"
-#define PREFIX_B			IMAGE_DIR "b"
-#define INFRARED_V1			PREFIX_A ".bmp"
-#define INFRARED_V2			PREFIX_B ".bmp"
-#define POINTCLOUND_V1		PREFIX_A "-point.ply"
-#define POINTCLOUND_V2		PREFIX_B "-point.ply"
-#define POINTCLOUND_ALL_1	IMAGE_DIR "point-all-1.ply"
-#define POINTCLOUND_ALL_2	IMAGE_DIR "point-all-2.ply"
-#define DEPTH_V1_PATH		PREFIX_A ".bin"
-#define DEPTH_V2_PATH		PREFIX_B ".bin"
+//#define ROOT_DIR			"D:\\yyk\\image\\"
+//#define NUMBER_ID			"1446086914-1"
+//#define IMAGE_DIR			ROOT_DIR NUMBER_ID "\\"
+//#define PREFIX_A			IMAGE_DIR "a"
+//#define PREFIX_B			IMAGE_DIR "b"
+//#define INFRARED_V1			PREFIX_A ".bmp"
+//#define INFRARED_V2			PREFIX_B ".bmp"
+//#define POINTCLOUND_V1		PREFIX_A "-point.ply"
+//#define POINTCLOUND_V2		PREFIX_B "-point.ply"
+//#define POINTCLOUND_ALL_1	IMAGE_DIR "point-all-1.ply"
+//#define POINTCLOUND_ALL_2	IMAGE_DIR "point-all-2.ply"
+//#define DEPTH_V1_PATH		PREFIX_A ".bin"
+//#define DEPTH_V2_PATH		PREFIX_B ".bin"
+//
+//#define UNDISTORT_IR1_PATH	PREFIX_A "-IR-und.bmp"
+//#define UNDISTORT_IR2_PATH	PREFIX_B "-IR-und.bmp"
+//#define UNDISTORT_DEPTH1_PATH	PREFIX_A "-d-und.bmp"
+//#define UNDISTORT_DEPTH2_PATH	PREFIX_B "-d-und.bmp"
+//#define V1_TO_V2_IMAGE		IMAGE_DIR "v1-to-v2.bmp"
+//#define V2_TO_V1_IMAGE		IMAGE_DIR "v2-to-v1.bmp"
+//
+//#define POINT_CLOUD_1		PREFIX_A "-points.ply"
+//#define POINT_CLOUD_2		PREFIX_B "-points.ply"
+//#define POINT_CLOUD_DIFF	PREFIX_A "-points-diff.ply"
 
-#define UNDISTORT_IR1_PATH	PREFIX_A "-IR-und.bmp"
-#define UNDISTORT_IR2_PATH	PREFIX_B "-IR-und.bmp"
-#define UNDISTORT_DEPTH1_PATH	PREFIX_A "-d-und.bmp"
-#define UNDISTORT_DEPTH2_PATH	PREFIX_B "-d-und.bmp"
-#define V1_TO_V2_IMAGE		IMAGE_DIR "v1-to-v2.bmp"
-#define V2_TO_V1_IMAGE		IMAGE_DIR "v2-to-v1.bmp"
-
-#define POINT_CLOUD_1		PREFIX_A "-points.ply"
-#define POINT_CLOUD_2		PREFIX_B "-points.ply"
-#define POINT_CLOUD_DIFF	PREFIX_A "-points-diff.ply"
-
-//const char * extrinsic_filename = "D:\\yyk\\extrinsics.yml";
-//const char * intrinsic_filename = "D:\\yyk\\intrinsics.yml";
-
-#define EXTRINSICS_FILE_PATH ROOT_DIR "extrinsics.yml"
-#define INTRINSICS_FILE_PATH ROOT_DIR "intrinsics.yml"
-#define TABLE1	ROOT_DIR "table1.txt"
-#define TABLE2	ROOT_DIR "table2.txt"
+#define EXTRINSICS_FILE_PATH "D:\\yyk\\image\\extrinsics.yml"
+#define INTRINSICS_FILE_PATH "D:\\yyk\\image\\intrinsics.yml"
+#define TABLE1 "D:\\yyk\\image\\table1.txt"
+#define TABLE2 "D:\\yyk\\image\\table2.txt"
 
 #define V1_FX (586.881)
 #define V1_FY (585.482)
@@ -247,11 +246,11 @@ Mat ToCVImage(const vector<UINT16>& src)
 //	fclose(fp);
 //}
 
-inline void writePly(const Mat& points, const vector<unsigned char>& IR, const char *filename, int w = WIDTH, int h = HEIGHT, 
+inline void writePly(const Mat& points, const vector<unsigned char>& IR, const string& filename, int w = WIDTH, int h = HEIGHT, 
 					 float r = 1, float g = 1, float b = 1, float tx = 0, float ty = 0, float tz = 0)
 {
 	FILE *fp;
-	fopen_s(&fp, filename, "w");
+	fopen_s(&fp, filename.c_str(), "w");
 	fprintf(fp, "ply\n");
 	fprintf(fp, "format ascii 1.0\n");
 	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
@@ -280,47 +279,6 @@ inline void writePly(const Mat& points, const vector<unsigned char>& IR, const c
 		}
 		fclose(fp);
 }
-
-//inline void writePly_roi(const Mat& points, const Mat& IR, const char *filename, bool cropped = false, cv::Rect rect = Rect(0, 0, WIDTH, HEIGHT), float r = 1, float g = 1, float b = 1)
-//{
-//	FILE *fp;
-//	fopen_s(&fp, filename, "w");
-//	fprintf(fp, "ply\n");
-//	fprintf(fp, "format ascii 1.0\n");
-//	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
-//	fprintf(fp, "element vertex %d\n", rect.width * rect.height);
-//	fprintf(fp, "property float x\n");
-//	fprintf(fp, "property float y\n");
-//	fprintf(fp, "property float z\n");
-//	fprintf(fp, "property uchar red\n");
-//	fprintf(fp, "property uchar green\n");
-//	fprintf(fp, "property uchar blue\n");
-//	fprintf(fp, "element face 0\n");
-//	fprintf(fp, "property list uchar int vertex_index\n");
-//	fprintf(fp, "end_header\n");
-//
-//	if (!cropped) {
-//		for (int j = 0; j < rect.height; ++j) {
-//			for (int i = 0; i < rect.width; ++i) {
-//				int idx = j * rect.width + i;
-//				int c = IR.at<unsigned char>(j+rect.height, i+rect.width);
-//				float x = points.at<float>(0, idx);
-//				float y = points.at<float>(1, idx);
-//				float z = points.at<float>(2, idx);
-//				fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, int(r*c), int(g*c), int(b*c));
-//			}
-//		}
-//	}
-//
-//
-//	fclose(fp);
-//}
-
-
-struct Vertex {
-	float x, y, z;
-	unsigned char r, g, b;
-};
 
 inline void writePly2(const Mat& points1, const Mat& points2, const Mat& IR1, const Mat& IR2, const char *filename,
 					  float tx1 = 0, float ty1 = 0, float tz1 = 0, float tx2 = 0, float ty2 = 0, float tz2 = 0)
@@ -438,41 +396,6 @@ Mat calc_points2(Mat depth_image, float fx, float fy, float cx, float cy) {
 		return points;
 }
 
-void flood_fill(Mat& img, int offset = 2)
-{
-	Mat temp = img.clone();
-	for (int j = 0; j < HEIGHT; ++j) {
-		int i = 0;
-		while (i < WIDTH && img.at<UINT16>(j, i) == 0)
-			++i;
-		//cout << i << endl;
-		for (int k = 0; k < offset && i + k < WIDTH; ++k)
-			temp.at<UINT16>(j, i + k) = 0;
-
-		i = WIDTH - 1;
-		while (i >= 0 && img.at<UINT16>(j, i) == 0)
-			--i;
-		for (int k = 0; k < offset && i - k >= 0; ++k)
-			temp.at<UINT16>(j, i - k) = 0;
-	}
-	for (int i = 0; i < WIDTH; ++i) {
-		int j = 0;
-		while (j < HEIGHT && img.at<UINT16>(j, i) == 0)
-			++j;
-		for (int k = 0; k < offset && j + k < HEIGHT; ++k)
-			temp.at<UINT16>(j + k, i) = 0;
-
-		j = HEIGHT - 1;
-		while (j >= 0 && img.at<UINT16>(j, i) == 0)
-			--j;
-		for (int k = 0; k < offset && j - k >= 0; ++k)
-			temp.at<UINT16>(j - k, i) = 0;
-	}
-
-
-	temp.copyTo(img);
-}
-
 void image_show(const char* title, const Mat& image) {
 	if (write_file)
 		imshow(title, image);
@@ -515,7 +438,7 @@ vector<T1> mat_to_vector(const Mat& img) {
 }
 
 template<typename T>
-Mat vector_to_img_uc(const vector<T>& vec, int w, int h, float scale = 1) {
+Mat vector_to_img_uc(const vector<T>& vec, int w = WIDTH, int h = HEIGHT, float scale = 1) {
 	Mat img(h, w, CV_8U);
 	for (int j = 0; j < h; ++j)
 		for (int i = 0; i < w; ++i) {
@@ -587,7 +510,7 @@ void write_normalized_vector(const vector<T> &img, const string& filename, int w
 			output.at<BYTE>(y, x) = BYTE(v * 255);
 		}
 
-	image_write(filename, output);
+	imwrite(filename, output);
 }
 
 inline void ReadCalibratedUndistortionTable(vector<pair<float, float>> &undistortLT, int width, int height, const char *filepath)
@@ -641,7 +564,6 @@ float fr(UINT16 val) {
 	else
 		return (range-val) / range; 
 }
-
 static vector<UINT16> resize_image(const vector<UINT16>& vec, int width = 512, int height = 424, int target_w = 580, int target_h = 480, bool ignore_zero = true)
 {
 	vector<UINT16> ret(WIDTH * HEIGHT, 0);
@@ -686,26 +608,48 @@ static vector<UINT16> resize_image(const vector<UINT16>& vec, int width = 512, i
 	return ret;
 }
 
-int main()
+// 640 * 480 Mat<float> -> 512 * 424 vector<UINT16>
+void ResizeAndSaveToBin(const vector<float>& vec, const string& file_path){
+	// 640*480 -> 580*480
+	int w = 580, h = 480;
+	int offset = (640 - w) / 2;
+	Mat mat = Mat::zeros(h, w, CV_32F);
+	for (int j = 0; j < h; j++) {
+		for (int i = 0; i < w; ++i) {
+			int idx = (i + offset + j * 640);
+			mat.at<float>(j, i) = vec[idx];
+		}
+	}
+	//imshow("test", vector_to_img_uc(vec));
+	//imshow("test1", mat);
+	//waitKey();
+	
+	w = 512;
+	h = 424;
+
+	vector<UINT16> bin(w * h, 0);
+
+	//printf("%d %d\n", mat.cols, mat.rows);
+	cv::resize(mat, mat, Size(w, h), 0, 0, INTER_NEAREST);
+	for (int j = 0; j < h; j++) {
+		for (int i = 0; i < w; ++i) {
+			int idx = i + j * w;
+			float d = mat.at<float>(j, i);
+			bin[idx] = (UINT16)d;
+		}
+	}
+
+	ofstream os(file_path, ios::binary);
+	os.write((char*)&bin[0], w * h * sizeof(UINT16));
+	os.close();
+}
+
+void process(const string& ir1_path, const string& ir2_path, const string& depth1_path, const string& depth2_path, const string& prefix, const string& bin_path)
 {
-	//Mat cameraMatrix[2], distCoeffs[2];
-	//cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
-	//cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
 	Mat R, T, E, F;
 	{
 		const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
-		//	const char * intrinsic_filename = INTRINSICS_FILE_PATH;
 		FileStorage fs;
-		//	fs.open(intrinsic_filename, CV_STORAGE_READ);
-		//	if (!fs.isOpened())
-		//	{
-		//		printf("Failed to open file %s\n", intrinsic_filename);
-		//	}
-		//	fs["M1"] >> cameraMatrix[0];
-		//	fs["D1"] >> distCoeffs[0];
-		//	fs["M2"] >> cameraMatrix[1];
-		//	fs["D2"] >> distCoeffs[1];
-
 		fs.open(extrinsic_filename, CV_STORAGE_READ);
 		if (!fs.isOpened())
 		{
@@ -726,12 +670,12 @@ int main()
 		depth_pixels[1].resize(512 * 424);
 		{
 			FILE *depth_in;
-			printf("%s\n", DEPTH_V1_PATH);
-			fopen_s(&depth_in, DEPTH_V1_PATH, "rb");
+			cout << depth1_path << endl;
+			fopen_s(&depth_in, depth1_path.c_str(), "rb");
 			fread(&depth_pixels[0][0], sizeof(UINT16), depth_pixels[0].size(), depth_in);
 			fclose(depth_in);
-			printf("%s\n", DEPTH_V2_PATH);
-			fopen_s(&depth_in, DEPTH_V2_PATH, "rb");
+			cout << depth2_path << endl;
+			fopen_s(&depth_in, depth2_path.c_str(), "rb");
 			fread(&depth_pixels[1][0], sizeof(UINT16), depth_pixels[1].size(), depth_in);
 			fclose(depth_in);
 		}
@@ -752,26 +696,17 @@ int main()
 			//depth_pixels[1] = resize_image(depth_pixels[1]);
 			//auto d2 = resize_image(depth_pixels[1]);
 			//write_normalized_vector(d2, "D:\\2.bmp");
-
 			depth_pixels[1] = resize_image(depth_pixels[1]);
 		}
 
-		std::cout << INFRARED_V1 << '\n' << INFRARED_V2 << '\n';
-		img_IR[0] = imread(INFRARED_V1, 0);
+		std::cout << ir1_path << '\n' << ir2_path << '\n';
+		img_IR[0] = imread(ir1_path, 0);
 		{
-			Mat mat = imread(INFRARED_V2, 0);
+			Mat mat = imread(ir2_path, 0);
 			cv::resize(mat, mat, Size(580, 480));
 			img_IR[1] = Mat::zeros(Size(640, 480), mat.type());
 			mat.copyTo(img_IR[1](Rect(30, 0, 580, 480)));
 		}
-
-		//for (int i = 0; i < 2; ++i) {
-		//	img_IR_und[i] = Mat::zeros(HEIGHT, WIDTH, CV_8U);
-		//	//cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
-		//	//cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
-		//	cv::undistort(img_IR[i], img_IR_und[i], cameraMatrix[i], distCoeffs[i]);
-		//	cv::undistort(img_depth[i], img_depth_und[i], cameraMatrix[i], distCoeffs[i]);
-		//}
 
 		for (int i = 0; i < 2; ++i) {
 			IR[i] = mat_to_vector<unsigned char>(img_IR[i]);
@@ -796,8 +731,10 @@ int main()
 			}
 		}
 
-		write_normalized_vector(depth_pixels[0], string(IMAGE_DIR) + "a-depth.bmp");
-		write_normalized_vector(depth_pixels[1], string(IMAGE_DIR) + "b-depth.bmp");
+#ifndef WRITE_BB_BIN_ONLY
+		write_normalized_vector(depth_pixels[0], prefix + "-a-depth-n.bmp");
+		write_normalized_vector(depth_pixels[1], prefix + "-b-depth-n.bmp");
+#endif // !WRITE_BB_BIN_ONLY
 
 		for (int j = 0; j < 2; ++j) {
 			for (int i = 0; i < WIDTH * HEIGHT; i++) {
@@ -807,28 +744,12 @@ int main()
 				depth_und[j][i] = bilinear<UINT16>(entry.first, entry.second, depth_pixels[j], WIDTH, HEIGHT, true);
 			}
 		}
-
-		//for (int i = 0; i < WIDTH * HEIGHT; ++i) {
-		//	//depth_und[0][i] = depth_pixels[0][i] == 0 ? DEPTH_INVALID : depth_pixels[0][i];
-		//	depth_und[1][i] = depth_pixels[1][i] == 0 ? DEPTH_INVALID : depth_pixels[1][i];
-		//}
 	}
 
-	imwrite(UNDISTORT_IR1_PATH, vector_to_img_uc(IR_und[0], WIDTH, HEIGHT));
-	imwrite(UNDISTORT_IR2_PATH, vector_to_img_uc(IR_und[1], WIDTH, HEIGHT));
-
-
-	//imshow("image IR und 0", img_IR_und[0]);
-	//imshow("image IR und 1", img_IR_und[1]);
-
-	//imshow("IR und 0", vector_to_img_uc<UINT16>(IR_und[0], WIDTH, HEIGHT));
-	//imshow("IR und 1", vector_to_img_uc<UINT16>(IR_und[1], WIDTH, HEIGHT));
-
-	//IR_und[0] = mat_to_vector<UINT16>(img_IR_und[0]);
-	//IR_und[1] = mat_to_vector<UINT16>(img_IR_und[1]);
-
-	//depth_und[0] = mat_to_vector<float, UINT16>(img_depth_und[0]);
-	//depth_und[1] = mat_to_vector<float, UINT16>(img_depth_und[1]);
+#ifndef WRITE_BB_BIN_ONLY
+	imwrite(prefix + "-a-IR-und.bmp", vector_to_img_uc(IR_und[0], WIDTH, HEIGHT));
+	imwrite(prefix + "-b-IR-und.bmp", vector_to_img_uc(IR_und[1], WIDTH, HEIGHT));
+#endif // !WRITE_BB_BIN_ONLY
 
 	Mat points_1 = calc_points(depth_und[0], V1_FX, V1_FY, V1_CX, V1_CY);
 	Mat points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
@@ -877,9 +798,9 @@ int main()
 			}
 		}
 
-		image_write(V1_TO_V2_IMAGE, img_new_IR);
-
-
+#ifndef WRITE_BB_BIN_ONLY
+		image_write(prefix + "-v1tov2.bmp", img_new_IR);
+#endif // !WRITE_BB_BIN_ONLY
 		vector<float> depth, bias;
 		float smooth = 0.350f;
 		prepare_for_solving_bias(depth, depth1_to_2, depth_und[1]);
@@ -894,7 +815,7 @@ int main()
 			for (int j = 0; j < bias.size(); ++j)
 				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
 			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
-			string path = std::string(IMAGE_DIR) + "bias.bmp";
+			string path = prefix + "-bias.bmp";
 			write_normalized_image(img, path.c_str());
 		}
 
@@ -904,28 +825,55 @@ int main()
 
 		Mat points_2_without_bias = calc_points(depth1_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 
-		writePly(new_points_1, IR_und[0], POINTCLOUND_V1, WIDTH, HEIGHT, 1, 1, 0);
-		writePly(new_points_2, IR_und[1], POINTCLOUND_V2, WIDTH, HEIGHT, 0, 0, 1);
-		writePly(points_2_without_bias, IR_und[1], (string(IMAGE_DIR) + "diff.ply").c_str(), WIDTH, HEIGHT, 0, 1, 0);
+		ResizeAndSaveToBin(depth1_without_bias, bin_path);
+
+#ifndef WRITE_BB_BIN_ONLY
+		writePly(new_points_1, IR_und[0], prefix + "-a.ply", WIDTH, HEIGHT, 1, 1, 0);
+		writePly(new_points_2, IR_und[1], prefix + "-b.ply", WIDTH, HEIGHT, 0, 0, 1);
+		writePly(points_2_without_bias, IR_und[1], prefix + "-diff.ply", WIDTH, HEIGHT, 0, 1, 0);
 
 		vector<float> bias2;
 		solve_for_bias(WIDTH, HEIGHT, depth1_to_2, smooth, 0, 500, bias2);
 		Mat points_comp = calc_points(bias2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-		writePly(points_comp, IR_und[1], (string(IMAGE_DIR) + "test_bias.ply").c_str(), WIDTH, HEIGHT, 1, 0, 0);
+		writePly(points_comp, IR_und[1], prefix + "-test_bias.ply", WIDTH, HEIGHT, 1, 0, 0);
 
 		{
 			auto bias_ = bias2;
 			for (int j = 0; j < bias.size(); ++j)
 				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
 			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
-			string path = std::string(IMAGE_DIR) + "bias2.bmp";
+			string path = prefix + "-test-bias2.bmp";
 			write_normalized_image(img, path.c_str());
 		}
+#endif
 	}
+}
 
-	//system("pause");
-	char c = (char)waitKey();
-	//if (c == 27 || c == 'q' || c == 'Q')
-	//	return 0;
-	return 0;
+#define TEST_ROOT_DIR "D:\\yyk\\capture\\test\\"
+#define TEST_NUMBER_ID "1446100378-10"
+#define TEST_SAVE_TEMP_FILE_DIR "D:\\yyk\\capture\\test\\temp\\"
+#define TEST_OUPUT_BIN_PATH "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-bb.bin"
+
+
+int main(int argc, char* argv[])
+{
+	string root_dir = TEST_ROOT_DIR;
+	string number_id = TEST_NUMBER_ID;
+	string save_temp_file_dir = TEST_SAVE_TEMP_FILE_DIR;
+	string bin_path = TEST_OUPUT_BIN_PATH;
+	if (argc >= 5) {
+		root_dir = argv[1];
+		number_id = string(argv[2]);
+		save_temp_file_dir = string(argv[3]);
+		bin_path = string(argv[4]);
+	}
+	cout << number_id << ' ' << save_temp_file_dir << ' ' << bin_path << endl;
+	string prefix = root_dir + number_id;
+	string IR1_path = prefix + "-a.bmp";
+	string IR2_path = prefix + "-b.bmp";
+	string depth1_path = prefix + "-a.bin";
+	string depth2_path = prefix + "-b.bin";
+	prefix = save_temp_file_dir+number_id;
+
+	process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path);
 }

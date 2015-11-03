@@ -1,13 +1,14 @@
 #include "KinectV2.h"
 #include "C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc\Kinect.h"
 #include <cassert>
+#include <iostream>
 
 KinectSensorV2::KinectSensorV2()
 {
 	// create heap storage for depth pixel data in RGBX format
 	m_pDepthRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
 	m_pInfraredRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
-
+	m_pRGBX = new RGBQUAD[cRGBWidth*cRGBHeight];
 	rawDepthData.reserve(cDepthHeight * cDepthWidth);
 }
 
@@ -72,8 +73,18 @@ HRESULT KinectSensorV2::InitializeDefaultSensor()
 			hr = pInfraredFrameSource->OpenReader(&m_pInfraredFrameReader);
 		}
 
+		// Initialize the Kinect and get the rgb reader
+		IColorFrameSource* pColorFrameSource = nullptr;
+		if (SUCCEEDED(hr)) {
+			hr = m_pKinectSensor->get_ColorFrameSource(&pColorFrameSource);
+		}
+
+		if (SUCCEEDED(hr)) {
+			hr = pColorFrameSource->OpenReader(&m_pColorFrameReader);
+		}
 		SafeRelease(pDepthFrameSource);
 		SafeRelease(pInfraredFrameSource);
+		SafeRelease(pColorFrameSource);
 	}
 
 	if (!m_pKinectSensor || FAILED(hr))
@@ -93,6 +104,9 @@ void KinectSensorV2::Update()
 	}
 	if (!m_pInfraredFrameReader)
 	{
+		return;
+	}
+	if (!m_pColorFrameReader) {
 		return;
 	}
 
@@ -211,6 +225,71 @@ void KinectSensorV2::Update()
 
 	SafeRelease(pInfraredFrame);
 
+	// color
+	IColorFrame* pColorFrame = NULL;
+
+	hr = m_pColorFrameReader->AcquireLatestFrame(&pColorFrame);
+
+	RGBQUAD *pBuffer = NULL;
+	if (SUCCEEDED(hr))
+	{
+		INT64 nTime = 0;
+		IFrameDescription* pFrameDescription = NULL;
+		int nWidth = 0;
+		int nHeight = 0;
+		ColorImageFormat imageFormat = ColorImageFormat_None;
+		UINT nBufferSize = 0;
+		RGBQUAD *pBuffer = NULL;
+
+		hr = pColorFrame->get_RelativeTime(&nTime);
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pColorFrame->get_FrameDescription(&pFrameDescription);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Width(&nWidth);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Height(&nHeight);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pColorFrame->get_RawColorImageFormat(&imageFormat);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			if (imageFormat == ColorImageFormat_Bgra)
+			{
+				hr = pColorFrame->AccessRawUnderlyingBuffer(&nBufferSize, reinterpret_cast<BYTE**>(&pBuffer));
+			}
+			else if (m_pRGBX)
+			{
+				pBuffer = m_pRGBX;
+				nBufferSize = cRGBWidth * cRGBHeight * sizeof(RGBQUAD);
+				hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(pBuffer), ColorImageFormat_Bgra);
+			}
+			else
+			{
+				hr = E_FAIL;
+			}
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			ProcessColor(nTime, pBuffer, nWidth, nHeight);
+		}
+
+		SafeRelease(pFrameDescription);
+	}
+	SafeRelease(pColorFrame);
+
 }
 
 
@@ -236,12 +315,13 @@ void KinectSensorV2::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth
 		//}
 
 		//rawDepthData = vector<UINT16>(pBuffer, pBufferEnd);
-		
+		depth_timestamp = nTime;
 		while (pBuffer < pBufferEnd)
 		{
 			USHORT depth = *pBuffer;
 
-			rawDepthData[idx++] = ((depth >= nMinDepth) && (depth <= nMaxDepth)) ? depth : 0;
+			//std::cout << nMinDepth << ' ' << nMaxDepth << '\n';
+			rawDepthData[idx] = ((depth >= nMinDepth) && (depth <= nMaxDepth)) ? depth : 0;
 
 			// To convert to a byte, we're discarding the most-significant
 			// rather than least-significant bits.
@@ -258,6 +338,7 @@ void KinectSensorV2::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth
 
 			++pRGBX;
 			++pBuffer;
+			++idx;
 		}
 
 		// Draw the data with Direct2D
@@ -310,6 +391,17 @@ void KinectSensorV2::ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWi
 		m_pDrawInfrared->Draw(reinterpret_cast<BYTE*>(m_pInfraredRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
 	}
 }
+
+void KinectSensorV2::ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight)
+{
+	// Make sure we've received valid data
+	if (pBuffer && (nWidth == cRGBWidth) && (nHeight == cRGBHeight))
+	{
+		// Draw the data with Direct2D
+		m_pDrawRGB->Draw(reinterpret_cast<BYTE*>(pBuffer), cRGBWidth * cRGBHeight * sizeof(RGBQUAD));
+	}
+}
+
 
 const float KinectSensorV2::fovx = 70.6f;
 

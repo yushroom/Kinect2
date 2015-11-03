@@ -75,7 +75,11 @@ private:
 	ImageRenderer*          m_pDrawDepth2 = nullptr;
 	ImageRenderer*			m_pDrawInfrared1 = nullptr;
 	ImageRenderer*          m_pDrawInfrared2 = nullptr;
+	ImageRenderer*			m_pDrawRGB1 = nullptr;
+	ImageRenderer*			m_pDrawRGB2 = nullptr;
 	ID2D1Factory*           m_pD2DFactory = nullptr;
+	FILE*					m_pTimestampFilePtrV1 = nullptr;
+	FILE*					m_pTimestampFilePtrV2 = nullptr;
 	//RGBQUAD*                m_pDepthRGBX;
 
 	/// <summary>

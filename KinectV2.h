@@ -35,6 +35,7 @@ struct IDepthFrameReader;
 struct IDepthFrame;
 struct IFrameDescription;
 struct IInfraredFrameReader;
+struct IColorFrameReader;
 
 struct DepthFrameDataV2
 {
@@ -54,34 +55,46 @@ public:
 	static const float		fovx;
 	static const float		fovy;
 
+	//static const bool		cReceive_RGB = true;
+	static const int		cRGBWidth = 1920;
+	static const int		cRGBHeight = 1080;
+
 	vector<UINT16>			rawDepthData;
 	vector<BYTE>			rawInfraredData;
 	RGBQUAD*                m_pInfraredRGBX = nullptr;
 	RGBQUAD*                m_pDepthRGBX = nullptr;
+	RGBQUAD*				m_pRGBX = nullptr;
 
 private:
 	// Current Kinect
 	IKinectSensor*			m_pKinectSensor  = nullptr;
+
+	// RGB reader
+	IColorFrameReader *      m_pColorFrameReader = nullptr;
 	// Depth reader
 	IDepthFrameReader*		m_pDepthFrameReader = nullptr;
 	// Infrared reader
 	IInfraredFrameReader*	m_pInfraredFrameReader = nullptr;
+
 
 	IDepthFrame*			pDepthFrame			= NULL;
 	IFrameDescription*		pFrameDescription	= NULL;
 
 	ImageRenderer*			m_pDrawDepth	= nullptr;
 	ImageRenderer*          m_pDrawInfrared = nullptr;
+	ImageRenderer*			m_pDrawRGB		= nullptr;
 
 public:
+	long long				depth_timestamp;
 	KinectSensorV2();
 	~KinectSensorV2();
 	HRESULT InitializeDefaultSensor();
 	void Update();
 
-	void SetImageRender(ImageRenderer* pDrawDepth, ImageRenderer* pDrawInfrared) {
+	void SetImageRender(ImageRenderer* pDrawDepth, ImageRenderer* pDrawInfrared, ImageRenderer* pDrawRGB) {
 		m_pDrawDepth = pDrawDepth;
 		m_pDrawInfrared = pDrawInfrared;
+		m_pDrawRGB = pDrawRGB;
 	}
 
 	/// <summary>
@@ -106,6 +119,16 @@ public:
 	/// <param name="nHeight">height (in pixels) of input image data</param>
 	/// </summary>
 	void ProcessInfrared(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight);
+
+
+	/// <summary>
+	/// Handle new color data
+	/// <param name="nTime">timestamp of frame</param>
+	/// <param name="pBuffer">pointer to frame data</param>
+	/// <param name="nWidth">width (in pixels) of input image data</param>
+	/// <param name="nHeight">height (in pixels) of input image data</param>
+	/// </summary>
+	void ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight);
 
 	const RGBQUAD* GetDepthBuffer() const {
 		return m_pDepthRGBX;

@@ -46,6 +46,11 @@ void KinectSensorV1::Update()
 	{
 		ProcessColor();
 	}
+
+	if (cRevieveRGB && WAIT_OBJECT_0 == WaitForSingleObject(m_hNextRGBFrameEvent, 0))
+	{
+		ProcessRGB();
+	}
 }
 
 void KinectSensorV1::ProcessDepth()
@@ -66,6 +71,7 @@ void KinectSensorV1::ProcessDepth()
 	// Get the depth image pixel texture
 	hr = m_pNuiSensor->NuiImageFrameGetDepthImagePixelFrameTexture(
 		m_pDepthStreamHandle, &imageFrame, &nearMode, &pTexture);
+	depth_timestamp = imageFrame.liTimeStamp.QuadPart;
 	if (FAILED(hr))
 	{
 		goto ReleaseFrame;
@@ -186,7 +192,7 @@ void KinectSensorV1::ProcessColor()
 
 		rawInfraredData.clear();
 
-		
+
 		for (int j = 0; j < cDepthHeight; ++j) {
 			for (int i = 0; i < cDepthWidth; ++i) {
 				int idx = j * cDepthWidth + i;
@@ -234,6 +240,46 @@ void KinectSensorV1::ProcessColor()
 
 	// Release the frame
 	m_pNuiSensor->NuiImageStreamReleaseFrame(m_pColorStreamHandle, &imageFrame);
+}
+
+void KinectSensorV1::ProcessRGB()
+{
+	
+	HRESULT hr;
+	NUI_IMAGE_FRAME imageFrame;
+
+	// Attempt to get the color frame
+	hr = m_pNuiSensor->NuiImageStreamGetNextFrame(m_pRGBStreamHandle, 0, &imageFrame);
+	if (FAILED(hr))
+	{
+		return;
+	}
+
+	INuiFrameTexture * pTexture = imageFrame.pFrameTexture;
+	NUI_LOCKED_RECT LockedRect;
+
+	// Lock the frame data so the Kinect knows not to modify it while we're reading it
+	pTexture->LockRect(0, &LockedRect, NULL, 0);
+
+	// Make sure we've received valid data
+	if (LockedRect.Pitch != 0)
+	{
+		//memcpy(m_colorRGBX, LockedRect.pBits, sizeof(BYTE)*cRGBWidth*cRGBHeight*cBytesPerPixel);
+		for (int i = 0; i < cRGBHeight; ++i)
+			for (int j = 0; j < cRGBWidth; ++j) {
+				int idx_src = i*cRGBWidth + j;
+				int idx_dst = (cRGBHeight - 1 - i)*cRGBWidth + cRGBWidth-1-j;
+				for (int b = 0; b < cBytesPerPixel; b++)
+					m_colorRGBX[idx_dst*cBytesPerPixel + b] = LockedRect.pBits[idx_src*cBytesPerPixel + b];
+			}
+		m_pDrawRGB->Draw(m_colorRGBX, cRGBWidth*cRGBHeight*sizeof(BYTE)*cBytesPerPixel);
+	}
+
+	// We're done with the texture so unlock it
+	pTexture->UnlockRect(0);
+
+	// Release the frame
+	m_pNuiSensor->NuiImageStreamReleaseFrame(m_pRGBStreamHandle, &imageFrame);
 }
 
 HRESULT KinectSensorV1::CreateFirstConnected()
@@ -302,6 +348,20 @@ HRESULT KinectSensorV1::CreateFirstConnected()
 				2,
 				m_hNextColorFrameEvent,
 				&m_pColorStreamHandle);
+		}
+		if (SUCCEEDED(hr))
+		{
+			// Create an event that will be signaled when rgb data is available
+			m_hNextRGBFrameEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+			// Open a color image stream to receive color frames
+			hr = m_pNuiSensor->NuiImageStreamOpen(
+				NUI_IMAGE_TYPE_COLOR,
+				NUI_IMAGE_RESOLUTION_1280x960,
+				0,
+				2,
+				m_hNextRGBFrameEvent,
+				&m_pRGBStreamHandle);
 		}
 	}
 

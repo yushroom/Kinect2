@@ -16,6 +16,8 @@
 #define IDC_VIDEOVIEW2                  2000
 #define IDC_VIDEOVIEW3                  2001
 #define IDC_VIDEOVIEW4                  2002
+#define IDC_RGB_V1						2003
+#define IDC_RGB_V2						2004
 
 
 // Next default values for new objects
