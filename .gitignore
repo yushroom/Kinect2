@@ -1,0 +1,9 @@
+/Debug
+/Release
+/x64
+/IR2IR/Debug
+/IR2IR/x64
+/calibration/example_calibration.dir
+/calibration/Release
+
+*.sdf
