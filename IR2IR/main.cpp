@@ -9,6 +9,7 @@
 #include <fstream>
 #include <algorithm>
 #include <advmath.h>
+#include "fit_gaussian.h"
 
 using namespace cv;
 using namespace std;
@@ -804,6 +805,9 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 		vector<float> depth, bias;
 		float smooth = 0.350f;
 		prepare_for_solving_bias(depth, depth1_to_2, depth_und[1]);
+
+		auto vec = fit_gaussian(depth1_to_2, depth_und[1], WIDTH, HEIGHT, 3, 1, 1);
+
 		solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
 
 		Mat new_points_1 = calc_points(depth1_to_2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);

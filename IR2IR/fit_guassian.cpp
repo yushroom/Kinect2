@@ -53,8 +53,8 @@ std::vector<GAUSSIAN_TYPE> fit_gaussian(
 					local_area_depth(gaussian_width, std::vector<double>(gaussian_width, 0.0));
 				double sum_depth = 0.0;
 				for (int k = i - half_gaussian_width,x=0; k <= i + half_gaussian_width; ++k,++x)
-					for (int l = j - half_gaussian_width,y=0; j <= j + half_gaussian_width; ++j,++y){
-						int local_idx = k + l*depth_width;
+					for (int l = j - half_gaussian_width,y=0; l <= j + half_gaussian_width; ++l,++y){
+						int local_idx = l + k*depth_width;
 						local_area_depth[x][y] = depth_frame_v2[local_idx];
 						sum_depth += local_area_depth[x][y];
 					}
