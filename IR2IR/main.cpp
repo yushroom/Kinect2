@@ -16,7 +16,7 @@ using namespace std;
 
 typedef unsigned short UINT16;
 
-#define WRITE_BB_BIN_ONLY
+//#define WRITE_BB_BIN_ONLY
 
 #ifdef _DEBUG
 #define WRITE_FILE
@@ -83,6 +83,8 @@ const int	depth_height = 480;
 
 const float DEPTH_INVALID = 1e30f;
 #define VALID_DEPTH_TEST(a) (a < DEPTH_INVALID)
+
+string bin_prefix;
 
 void solve_for_bias(const int w, const int h, const std::vector<float> &I,
 					const float alpha, const float lambda, const int niter,
@@ -609,8 +611,53 @@ static vector<UINT16> resize_image(const vector<UINT16>& vec, int width = 512, i
 	return ret;
 }
 
+
+vector<float> average_depth_pixels(const vector<float>& depth, int w = WIDTH, int h = HEIGHT)
+{
+	vector<float> ret(WIDTH * HEIGHT, 0);
+	for (int j = 0; j < h; ++j) {
+		for (int i = 0; i < w; ++i) {
+			//int idx = j * WIDTH + i;
+			int count = 0;
+			float sum = 0;
+			for (int k = -1; k <= 1; ++k) {
+				if (j + k < 0 || j + k >= h)
+					continue;
+				for (int l = -1; l <= 1; ++l) {
+					if (l + i < 0 || l + i >= w)
+						continue;
+					int idx = (j + k) * w + (i+l);
+					float val = depth[idx];
+					if (val != 0 && VALID_DEPTH_TEST(val)) {
+						count ++;
+						sum += val;
+					}
+				}
+			}
+			int idx = j * w + i;
+			//assert(count != 0);
+			if (count != 0)
+				ret[idx] = sum / count;
+		}
+	}
+	return ret;
+}
+
+void SaveToBin(const vector<float>& vec, const string& file_path){
+	int w = WIDTH;
+	int h = HEIGHT;
+	assert(vec.size() == WIDTH * HEIGHT);
+	vector<UINT16> bin(w * h, 0);
+	for (int i = 0; i < vec.size(); ++i)
+		bin[i] = (UINT16)vec[i];
+	ofstream os(file_path, ios::binary);
+	os.write((char*)&bin[0], w * h * sizeof(UINT16));
+	os.close();
+}
+
 // 640 * 480 Mat<float> -> 512 * 424 vector<UINT16>
 void ResizeAndSaveToBin(const vector<float>& vec, const string& file_path){
+	assert(vec.size() == WIDTH * HEIGHT);
 	// 640*480 -> 580*480
 	int w = 580, h = 480;
 	int offset = (640 - w) / 2;
@@ -645,7 +692,157 @@ void ResizeAndSaveToBin(const vector<float>& vec, const string& file_path){
 	os.close();
 }
 
-void process(const string& ir1_path, const string& ir2_path, const string& depth1_path, const string& depth2_path, const string& prefix, const string& bin_path)
+enum ProjectionType {
+	v1_to_v2 = 0,
+	v2_to_v1 = 1
+};
+
+//1 -> 2, [points] of v1, [IR_und] of v1, [depth_und] of v2
+//2 -> 1, [points] of v2, [IR_und] of v2, [depth_und] of v1
+void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, const vector<unsigned char>& IR_und, const vector<float>& depth_und, const string& prefix, const string& bin_path, ProjectionType proj_type, bool save_temp_file)
+{
+	float fx, fy, cx, cy;
+	if (proj_type == v1_to_v2) {
+		fx = V2_RESIZED_FX;
+		fy = V2_RESIZED_FY;
+		cx = V2_RESIZED_CX;
+		cy = V2_RESIZED_CY;
+	} else {
+		fx = V1_FX;
+		fy = V1_FY;
+		cx = V1_CX;
+		cy = V1_CY;
+	}
+
+	Mat trans = Mat::zeros(3, 3, CV_32F);
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j) {
+			if (proj_type == v1_to_v2)
+				trans.at<float>(i, j) = R.at<double>(i, j);
+			else
+				trans.at<float>(i, j) = R.at<double>(j, i);
+		}
+	//for (int i = 0; i < 3; ++i)
+	//	trans.at<float>(i, 3) = T.at<double>(i);
+
+	//points_1 = trans * points_1;
+	Mat points_1_1 = trans * points_1;
+	double tx = T.at<double>(0) * 10;
+	double ty = T.at<double>(1) * 10;
+	double tz = T.at<double>(2) * 10;
+	if (proj_type == v2_to_v1) {
+		tx = -tx; ty = -ty; tz = -tz;
+	}
+	//tx = ty = tz = 0;
+	//cout << "tx = " << tx << "  ty = " << ty << "  tz = " << tz << endl;
+
+	//int count = 0;
+	//cout << img_IR[1].type() << endl;
+	Mat img_new_IR = Mat::zeros(HEIGHT, WIDTH, CV_8U);
+	Mat img_new_depth = Mat::zeros(HEIGHT, WIDTH, CV_32F);
+	vector<float> depth1_to_2(WIDTH * HEIGHT, DEPTH_INVALID);
+
+	//Mat img = img_IR_1_undistort.clone();
+	for (int j = 0; j < HEIGHT; ++j) {
+		for (int i = 0; i < WIDTH; ++i) {
+			int idx = j * WIDTH + i;
+			int x, y;
+			float z = points_1.at<float>(2, idx);
+			if (z <= 1e-2f && z >= -1e-2f) {
+				continue;
+			}
+			z = points_1_1.at<float>(2, idx) + tz;
+			x = int(fx * (points_1_1.at<float>(0, idx) + tx) / z + cx - 0.5f);
+			y = int(fy * (points_1_1.at<float>(1, idx) + ty) / z + cy - 0.5f);
+			//cout << x << ' ' << y << ' ' << z << '\n';
+			if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+				img_new_IR.at<unsigned char>(y, x) = IR_und[j*WIDTH + i];
+				img_new_depth.at<float>(y, x) = z;
+				depth1_to_2[y*WIDTH + x] = z;
+			}
+		}
+	}
+
+	//if (save_temp_file) {
+		if (proj_type == v1_to_v2)
+		{
+			imwrite(prefix + "-v1tov2.bmp", img_new_IR);
+			write_normalized_vector(depth1_to_2, prefix + "-v1tov2-depth.bmp");
+		} else {
+			imwrite(prefix + "-v2tov1.bmp", img_new_IR);
+			write_normalized_vector(depth1_to_2, prefix + "-v2tov1-depth.bmp");
+			depth1_to_2 = average_depth_pixels(depth1_to_2);
+			write_normalized_vector(depth1_to_2, prefix + "-v2tov1-depth-average.bmp");
+		}
+	//}
+
+	vector<float> depth, bias;
+	float smooth = 0.350f;
+	prepare_for_solving_bias(depth, depth1_to_2, depth_und);
+
+	vector<float> depth_f;
+	if (proj_type == v1_to_v2) {
+		depth_f = fit_depth(depth_und, depth1_to_2, WIDTH, HEIGHT, 5, 1, 1, 1, 1, 1, 0);
+		write_normalized_vector(depth_f, "d:\\fit_depth-1to2.bmp");
+	} else {
+		depth_f = fit_depth(depth1_to_2, depth_und, WIDTH, HEIGHT, 5, 1, 1, 1, 1, 1, 0);
+		write_normalized_vector(depth_f, "d:\\fit_depth_2to1.bmp");
+	}
+	
+
+	solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
+
+	//Mat new_points_1 = calc_points(depth1_to_2, fx, fy, cx, cy);
+	//Mat new_points_2 = calc_points(depth_und, fx, fy, cx, cy);
+
+	if (save_temp_file)
+	{
+		auto bias_ = bias;
+		for (int j = 0; j < bias.size(); ++j)
+			if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
+		Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
+		string path = prefix + "-bias.bmp";
+		write_normalized_image(img, path.c_str());
+	}
+
+
+	vector<float> depth1_without_bias = depth_und;
+	adjust_for_bias(depth1_without_bias, bias);
+
+	//Mat points_2_without_bias = calc_points(depth1_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+
+	if (proj_type == v1_to_v2) {
+		ResizeAndSaveToBin(depth1_to_2, bin_prefix + "-1to2.bin");
+		ResizeAndSaveToBin(depth1_without_bias, bin_path);
+	} else {
+		SaveToBin(depth1_to_2, bin_prefix + "-2to1.bin");
+		SaveToBin(depth1_without_bias, bin_path);
+	}
+	
+
+#if 0
+	writePly(new_points_1, IR_und[0], prefix + "-a.ply", WIDTH, HEIGHT, 1, 1, 0);
+	writePly(new_points_2, IR_und[1], prefix + "-b.ply", WIDTH, HEIGHT, 0, 0, 1);
+	writePly(points_2_without_bias, IR_und[1], prefix + "-diff.ply", WIDTH, HEIGHT, 0, 1, 0);
+
+	vector<float> bias2;
+	solve_for_bias(WIDTH, HEIGHT, depth1_to_2, smooth, 0, 500, bias2);
+	Mat points_comp = calc_points(bias2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+	writePly(points_comp, IR_und[1], prefix + "-test_bias.ply", WIDTH, HEIGHT, 1, 0, 0);
+
+	{
+		auto bias_ = bias2;
+		for (int j = 0; j < bias.size(); ++j)
+			if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
+		Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
+		string path = prefix + "-test-bias2.bmp";
+		write_normalized_image(img, path.c_str());
+	}
+#endif
+}
+
+
+void process(const string& ir1_path, const string& ir2_path, const string& depth1_path, const string& depth2_path, const string& prefix, const string& bin_path_v1tov2, const string& bin_path_v2tov1, bool save_temp_file)
 {
 	Mat R, T, E, F;
 	{
@@ -733,8 +930,8 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 		}
 
 #ifndef WRITE_BB_BIN_ONLY
-		write_normalized_vector(depth_pixels[0], prefix + "-a-depth-n.bmp");
-		write_normalized_vector(depth_pixels[1], prefix + "-b-depth-n.bmp");
+		//write_normalized_vector(depth_pixels[0], prefix + "-a-depth-n.bmp");
+		//write_normalized_vector(depth_pixels[1], prefix + "-b-depth-n.bmp");
 #endif // !WRITE_BB_BIN_ONLY
 
 		for (int j = 0; j < 2; ++j) {
@@ -747,137 +944,59 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 		}
 	}
 
-#ifndef WRITE_BB_BIN_ONLY
-	imwrite(prefix + "-a-IR-und.bmp", vector_to_img_uc(IR_und[0], WIDTH, HEIGHT));
-	imwrite(prefix + "-b-IR-und.bmp", vector_to_img_uc(IR_und[1], WIDTH, HEIGHT));
-#endif // !WRITE_BB_BIN_ONLY
+	if (save_temp_file) {
+		imwrite(prefix + "-a-IR-und.bmp", vector_to_img_uc(IR_und[0], WIDTH, HEIGHT));
+		imwrite(prefix + "-b-IR-und.bmp", vector_to_img_uc(IR_und[1], WIDTH, HEIGHT));
+		write_normalized_vector(depth_und[0], prefix + "-a-depth-und.bmp");
+		write_normalized_vector(depth_und[1], prefix + "-b-depth-und.bmp");
+	}
+	write_normalized_vector(depth_und[0], prefix + "-a-depth-und.bmp");
+	write_normalized_vector(depth_und[1], prefix + "-b-depth-und.bmp");
 
 	Mat points_1 = calc_points(depth_und[0], V1_FX, V1_FY, V1_CX, V1_CY);
 	Mat points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 
+
 	// 1 -> 2
-	{
-		Mat trans = Mat::zeros(3, 3, CV_32F);
-		for (int i = 0; i < 3; ++i)
-			for (int j = 0; j < 3; ++j)
-				trans.at<float>(i, j) = R.at<double>(i, j);
-		//for (int i = 0; i < 3; ++i)
-		//	trans.at<float>(i, 3) = T.at<double>(i);
-
-		//points_1 = trans * points_1;
-		Mat points_1_1 = trans * points_1;
-		double tx = T.at<double>(0) * 10;
-		double ty = T.at<double>(1) * 10;
-		double tz = T.at<double>(2) * 10;
-		//tx = ty = tz = 0;
-		//cout << "tx = " << tx << "  ty = " << ty << "  tz = " << tz << endl;
-
-		//int count = 0;
-		//cout << img_IR[1].type() << endl;
-		Mat img_new_IR = Mat::zeros(HEIGHT, WIDTH, CV_8U);
-		Mat img_new_depth = Mat::zeros(HEIGHT, WIDTH, CV_32F);
-		vector<float> depth1_to_2(WIDTH * HEIGHT, DEPTH_INVALID);
-
-		//Mat img = img_IR_1_undistort.clone();
-		for (int j = 0; j < HEIGHT; ++j) {
-			for (int i = 0; i < WIDTH; ++i) {
-				int idx = j * WIDTH + i;
-				int x, y;
-				float z = points_1.at<float>(2, idx);
-				if (z <= 1e-2f && z >= -1e-2f) {
-					continue;
-				}
-				z = points_1_1.at<float>(2, idx) + tz;
-				x = int(V2_RESIZED_FX * (points_1_1.at<float>(0, idx) + tx) / z + V2_RESIZED_CX - 0.5f);
-				y = int(V2_RESIZED_FY * (points_1_1.at<float>(1, idx) + ty) / z + V2_RESIZED_CY - 0.5f);
-				//cout << x << ' ' << y << ' ' << z << '\n';
-				if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
-					img_new_IR.at<unsigned char>(y, x) = IR_und[0][j*WIDTH + i];
-					img_new_depth.at<float>(y, x) = z;
-					depth1_to_2[y*WIDTH + x] = z;
-				}
-			}
-		}
-
-#ifndef WRITE_BB_BIN_ONLY
-		image_write(prefix + "-v1tov2.bmp", img_new_IR);
-#endif // !WRITE_BB_BIN_ONLY
-		vector<float> depth, bias;
-		float smooth = 0.350f;
-		prepare_for_solving_bias(depth, depth1_to_2, depth_und[1]);
-
-		auto vec = fit_gaussian(depth1_to_2, depth_und[1], WIDTH, HEIGHT, 3, 1, 1);
-
-		solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
-
-		Mat new_points_1 = calc_points(depth1_to_2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-		Mat new_points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-
-
-		{
-			auto bias_ = bias;
-			for (int j = 0; j < bias.size(); ++j)
-				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
-			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
-			string path = prefix + "-bias.bmp";
-			write_normalized_image(img, path.c_str());
-		}
-
-
-		vector<float> depth1_without_bias = depth_und[1];
-		adjust_for_bias(depth1_without_bias, bias);
-
-		Mat points_2_without_bias = calc_points(depth1_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-
-		ResizeAndSaveToBin(depth1_without_bias, bin_path);
-
-#ifndef WRITE_BB_BIN_ONLY
-		writePly(new_points_1, IR_und[0], prefix + "-a.ply", WIDTH, HEIGHT, 1, 1, 0);
-		writePly(new_points_2, IR_und[1], prefix + "-b.ply", WIDTH, HEIGHT, 0, 0, 1);
-		writePly(points_2_without_bias, IR_und[1], prefix + "-diff.ply", WIDTH, HEIGHT, 0, 1, 0);
-
-		vector<float> bias2;
-		solve_for_bias(WIDTH, HEIGHT, depth1_to_2, smooth, 0, 500, bias2);
-		Mat points_comp = calc_points(bias2, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-		writePly(points_comp, IR_und[1], prefix + "-test_bias.ply", WIDTH, HEIGHT, 1, 0, 0);
-
-		{
-			auto bias_ = bias2;
-			for (int j = 0; j < bias.size(); ++j)
-				if (!VALID_DEPTH_TEST(bias_[j])) bias_[j] = 0;
-			Mat img = vector_to_img_f(bias_, WIDTH, HEIGHT);
-			string path = prefix + "-test-bias2.bmp";
-			write_normalized_image(img, path.c_str());
-		}
-#endif
-	}
+	project_to_another_camera(R, T, points_1, IR_und[0], depth_und[1], prefix, bin_path_v1tov2, v1_to_v2, save_temp_file);
+	project_to_another_camera(R, T, points_2, IR_und[1], depth_und[0], prefix, bin_path_v2tov1, v2_to_v1, save_temp_file);
 }
 
 #define TEST_ROOT_DIR "D:\\yyk\\capture\\test\\"
 #define TEST_NUMBER_ID "1446100378-10"
 #define TEST_SAVE_TEMP_FILE_DIR "D:\\yyk\\capture\\test\\temp\\"
-#define TEST_OUPUT_BIN_PATH "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-bb.bin"
-
+//#define TEST_OUPUT_BIN_PATH_v2tov1 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-aa.bin"
+//#define TEST_OUPUT_BIN_PATH_v1tov2 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-bb.bin"
 
 int main(int argc, char* argv[])
 {
 	string root_dir = TEST_ROOT_DIR;
 	string number_id = TEST_NUMBER_ID;
 	string save_temp_file_dir = TEST_SAVE_TEMP_FILE_DIR;
-	string bin_path = TEST_OUPUT_BIN_PATH;
-	if (argc >= 5) {
+	//string bin_path_v2tov1 = TEST_OUPUT_BIN_PATH_v2tov1;
+	//string bin_path_v1tov2 = TEST_OUPUT_BIN_PATH_v1tov2;
+	bool save_temp_file = false;
+
+	if (argc >= 3) {
 		root_dir = argv[1];
 		number_id = string(argv[2]);
-		save_temp_file_dir = string(argv[3]);
-		bin_path = string(argv[4]);
+		//bin_path_1 = string(argv[3]);
 	}
-	cout << number_id << ' ' << save_temp_file_dir << ' ' << bin_path << endl;
+	if (argc >= 4) {
+		save_temp_file = true;
+		save_temp_file_dir = string(argv[3]);
+	}
+
+	std::cout << number_id << ' ' << save_temp_file_dir << endl;
 	string prefix = root_dir + number_id;
 	string IR1_path = prefix + "-a.bmp";
 	string IR2_path = prefix + "-b.bmp";
 	string depth1_path = prefix + "-a.bin";
 	string depth2_path = prefix + "-b.bin";
+	string bin_path_v2tov1 = prefix + "-aa.bin";
+	string bin_path_v1tov2 = prefix + "-bb.bin";
 	prefix = save_temp_file_dir+number_id;
+	bin_prefix = root_dir + number_id;
 
-	process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path);
+	process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);
 }
