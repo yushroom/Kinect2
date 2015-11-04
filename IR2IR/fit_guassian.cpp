@@ -46,7 +46,8 @@ inline void fit_gaussian_helper(
 			//outliers
 			if (i - half_gaussian_width < 0 || i + half_gaussian_width >= image_height
 				|| j - half_gaussian_width < 0 || j + half_gaussian_width >= image_width) {
-				p = { 0.0, 0.0 };
+				p.mu = 0.0;
+				p.sigma = 0.0;
 			}
 			else {
 				std::vector<std::vector<double>>
@@ -60,7 +61,8 @@ inline void fit_gaussian_helper(
 					}
 				double ave_value = sum_value / (gaussian_width*gaussian_width);
 				double sum_weight = 0.0;
-				p = { 0.0, 0.0 };
+				p.mu = 0.0;
+				p.sigma = 0.0;
 				for (int x = 0, pivot = gaussian_width / 2; x < gaussian_width; ++x)
 					for (int y = 0; y < gaussian_width; ++y) {
 					double dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
