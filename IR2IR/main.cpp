@@ -399,16 +399,6 @@ Mat calc_points2(Mat depth_image, float fx, float fy, float cx, float cy) {
 		return points;
 }
 
-void image_show(const char* title, const Mat& image) {
-	if (write_file)
-		imshow(title, image);
-}
-
-void image_write(const string& path, const Mat& image) {
-	if (write_file)
-		imwrite(path, image);
-}
-
 template<typename T>
 vector<T> mat_to_vector(const Mat& img) {
 	int w = img.cols;
@@ -487,7 +477,7 @@ void write_normalized_image(const Mat &img, const char *filename)
 			output.at<BYTE>(y, x) = BYTE(v * 255);
 		}
 
-		image_write(filename, output);
+		imwrite(filename, output);
 }
 
 template <typename T>
@@ -763,7 +753,7 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 		}
 	}
 
-	//if (save_temp_file) {
+	if (save_temp_file) {
 		if (proj_type == v1_to_v2)
 		{
 			imwrite(prefix + "-v1tov2.bmp", img_new_IR);
@@ -774,7 +764,7 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 			depth1_to_2 = average_depth_pixels(depth1_to_2);
 			write_normalized_vector(depth1_to_2, prefix + "-v2tov1-depth-average.bmp");
 		}
-	//}
+	}
 
 	vector<float> depth, bias;
 	float smooth = 0.350f;
@@ -842,20 +832,23 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 }
 
 
+vector<pair<float, float>>	undistortLookupTable[2];
+Mat R, T, E, F;
+
 void process(const string& ir1_path, const string& ir2_path, const string& depth1_path, const string& depth2_path, const string& prefix, const string& bin_path_v1tov2, const string& bin_path_v2tov1, bool save_temp_file)
 {
-	Mat R, T, E, F;
-	{
-		const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
-		FileStorage fs;
-		fs.open(extrinsic_filename, CV_STORAGE_READ);
-		if (!fs.isOpened())
-		{
-			printf("Failed to open file %s\n", extrinsic_filename);
-		}
-		fs["R"] >> R;
-		fs["T"] >> T;
-	}
+	//Mat R, T, E, F;
+	//{
+	//	const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
+	//	FileStorage fs;
+	//	fs.open(extrinsic_filename, CV_STORAGE_READ);
+	//	if (!fs.isOpened())
+	//	{
+	//		printf("Failed to open file %s\n", extrinsic_filename);
+	//	}
+	//	fs["R"] >> R;
+	//	fs["T"] >> T;
+	//}
 
 	//Mat img_IR_und[2];
 	//Mat img_depth_und[2];
@@ -912,9 +905,9 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 			depth_und[i].resize(WIDTH * HEIGHT);
 		}
 
-		vector<pair<float, float>>	undistortLookupTable[2];
-		ReadCalibratedUndistortionTable(undistortLookupTable[0], WIDTH, HEIGHT, TABLE1);
-		ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
+		//vector<pair<float, float>>	undistortLookupTable[2];
+		//ReadCalibratedUndistortionTable(undistortLookupTable[0], WIDTH, HEIGHT, TABLE1);
+		//ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
 
 		Mat table_x(HEIGHT, WIDTH, CV_8U);
 		Mat table_y(HEIGHT, WIDTH, CV_8U);
@@ -967,8 +960,57 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 #define TEST_SAVE_TEMP_FILE_DIR "D:\\yyk\\capture\\test\\temp\\"
 //#define TEST_OUPUT_BIN_PATH_v2tov1 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-aa.bin"
 //#define TEST_OUPUT_BIN_PATH_v1tov2 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-bb.bin"
-
+#define PATH_FILE "D:\\yyk\\capture\\test\\path.txt"
+ 
 int main(int argc, char* argv[])
+{
+	{
+		const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
+		FileStorage fs;
+		fs.open(extrinsic_filename, CV_STORAGE_READ);
+		if (!fs.isOpened())
+		{
+			printf("Failed to open file %s\n", extrinsic_filename);
+		}
+		fs["R"] >> R;
+		fs["T"] >> T;
+	}
+
+	ReadCalibratedUndistortionTable(undistortLookupTable[0], WIDTH, HEIGHT, TABLE1);
+	ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
+
+	//string path_file(PATH_FILE);
+	ifstream fin(PATH_FILE);
+	string str;
+	vector<string> image_path_list;
+	while (fin >> str) {
+		image_path_list.push_back(str);
+	}
+	while (image_path_list.size() % 4 != 0) {
+		image_path_list.pop_back();
+	}
+	cout << "image path list: " << image_path_list.size() << endl;
+	
+	bool save_temp_file = true;
+
+	//int count = 100;
+
+	for (int i = 0; i < image_path_list.size() / 4; ++i) {
+		const string& IR1_path		= image_path_list[i * 4];
+		const string& depth1_path	= image_path_list[i * 4 + 1];
+		const string& IR2_path		= image_path_list[i * 4 + 2];
+		const string& depth2_path	= image_path_list[i * 4 + 3];
+		string prefix = IR1_path.substr(0, IR1_path.find("-a.bmp"));
+		string bin_path_v1tov2 = prefix + "-bb.bin";
+		string bin_path_v2tov1 = prefix + "-aa.bin";
+		process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);	
+
+		//if (--count <= 0) break;
+	}
+	return 0;
+}
+
+int old_main(int argc, char* argv[])
 {
 	string root_dir = TEST_ROOT_DIR;
 	string number_id = TEST_NUMBER_ID;
@@ -999,4 +1041,5 @@ int main(int argc, char* argv[])
 	bin_prefix = root_dir + number_id;
 
 	process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);
+	return 0;
 }
