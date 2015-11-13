@@ -689,7 +689,7 @@ enum ProjectionType {
 
 //1 -> 2, [points] of v1, [IR_und] of v1, [depth_und] of v2
 //2 -> 1, [points] of v2, [IR_und] of v2, [depth_und] of v1
-void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, const vector<unsigned char>& IR_und, const vector<float>& depth_und, const string& prefix, const string& bin_path, ProjectionType proj_type, bool save_temp_file)
+void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, const vector<unsigned char>& IR_und, const vector<float>& depth_und, const string& prefix, const string& bin_path, const ProjectionType proj_type, bool save_temp_file)
 {
 	float fx, fy, cx, cy;
 	if (proj_type == v1_to_v2) {
@@ -802,9 +802,13 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 	//Mat points_2_without_bias = calc_points(depth1_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 
 	if (proj_type == v1_to_v2) {
+		//cout << endl << endl << bin_prefix << endl << endl;
+		//waitKey();
 		ResizeAndSaveToBin(depth1_to_2, bin_prefix + "-1to2.bin");
 		ResizeAndSaveToBin(depth1_without_bias, bin_path);
 	} else {
+		//cout << endl << endl << bin_prefix << endl << endl;
+		//waitKey();
 		SaveToBin(depth1_to_2, bin_prefix + "-2to1.bin");
 		SaveToBin(depth1_without_bias, bin_path);
 	}
@@ -937,6 +941,9 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 		}
 	}
 
+	SaveToBin(depth_und[0], prefix + "-a-depth-und.bin");
+	SaveToBin(depth_und[1], prefix + "-b-depth-und.bin");
+
 	if (save_temp_file) {
 		imwrite(prefix + "-a-IR-und.bmp", vector_to_img_uc(IR_und[0], WIDTH, HEIGHT));
 		imwrite(prefix + "-b-IR-und.bmp", vector_to_img_uc(IR_und[1], WIDTH, HEIGHT));
@@ -960,7 +967,7 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 #define TEST_SAVE_TEMP_FILE_DIR "D:\\yyk\\capture\\test\\temp\\"
 //#define TEST_OUPUT_BIN_PATH_v2tov1 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-aa.bin"
 //#define TEST_OUPUT_BIN_PATH_v1tov2 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-bb.bin"
-#define PATH_FILE "D:\\yyk\\capture\\test\\path.txt"
+#define PATH_FILE "D:\\yyk\\capture\\corner\\path.txt"
  
 int main(int argc, char* argv[])
 {
@@ -1003,6 +1010,7 @@ int main(int argc, char* argv[])
 		string prefix = IR1_path.substr(0, IR1_path.find("-a.bmp"));
 		string bin_path_v1tov2 = prefix + "-bb.bin";
 		string bin_path_v2tov1 = prefix + "-aa.bin";
+		bin_prefix = prefix;
 		process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);	
 
 		//if (--count <= 0) break;

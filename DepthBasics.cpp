@@ -717,16 +717,18 @@ void CDepthBasics::SaveInfraredImage()
 	std::string depth_bin_path_2 = ss.str() + "\\b.bin";
 #else
 	stringstream ss;
-	ss << IMAGE_PATH_PREFIX_A << "\\test_data\\" << now << '-' << m_nScreenShotCount;
+	//ss << IMAGE_PATH_PREFIX_A << "test_data\\" << now << '-' << m_nScreenShotCount;
+	ss << "D:\\yyk\\image\\NoiseModel_1113\\" << now << '-' << m_nScreenShotCount;
 	//CreatDir(ss.str().c_str());
 	//std::string ir_path_1 = ss.str() + "\\a.bmp";
 	string ir_path_2		= ss.str() + "-b-IR.bmp";
+	string ir_path_1		= ss.str() + "-a-IR.bmp";
 	//std::string depth_path_1 = ss.str() + "-a-depth.bmp";
 	//std::string depth_path_2 = ss.str() + "-b-depth.bmp";
 	string depth_bin_path_1 = ss.str() + "-a.bin";
 	string depth_bin_path_2 = ss.str() + "-b.bin";
-	string color_path_1		= ss.str() + "-a-color.bmp";
-	string color_path_2		= ss.str() + "-b-color.bmp";
+	//string color_path_1		= ss.str() + "-a-color.bmp";
+	//string color_path_2		= ss.str() + "-b-color.bmp";
 #endif // !CAPTURE_MODE
 
 #ifdef SAVE_IR_AND_DEPTH
@@ -766,10 +768,12 @@ void CDepthBasics::SaveInfraredImage()
 	info("Raw depth b [%s] save \n", depth_bin_path_2.c_str());
 
 #else // SAVE_IR_AND_DEPTH
-	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_colorRGBX), KinectSensorV1::cRGBWidth, KinectSensorV1::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_1).c_str());
-	info("Color image a [%s] save \n", color_path_1.c_str());
-	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pRGBX), KinectSensorV2::cRGBWidth, KinectSensorV2::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_2).c_str());
-	info("Color image b [%s] save \n", color_path_2.c_str());
+	//SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_colorRGBX), KinectSensorV1::cRGBWidth, KinectSensorV1::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_1).c_str());
+	//info("Color image a [%s] save \n", color_path_1.c_str());
+	//SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pRGBX), KinectSensorV2::cRGBWidth, KinectSensorV2::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_2).c_str());
+	//info("Color image b [%s] save \n", color_path_2.c_str());
+	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_pTempColorBuffer), KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, StringToWstring(ir_path_1).c_str());
+	info("IR image b [%s] save \n", ir_path_1.c_str());
 	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pInfraredRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, StringToWstring(ir_path_2).c_str());
 	info("IR image b [%s] save \n", ir_path_2.c_str());
 	sava_raw_depth(m_kinectV1.rawDepthData, KinectSensorV1::cDepthWidth * KinectSensorV1::cDepthHeight, depth_bin_path_1.c_str());

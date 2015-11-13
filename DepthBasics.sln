@@ -13,6 +13,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stereo_calib", "stereo_cali
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "calc_guassian", "..\calc_guassian\calc_guassian.vcxproj", "{59B6FCB6-27D2-45E3-8DDE-05075A67C872}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProjectRGB", "ProjectRGB\ProjectRGB.vcxproj", "{41B8CAC1-B959-40CD-AC20-90CA967C1911}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NoiseMode", "NoiseMode\NoiseMode.vcxproj", "{9935E0FB-69EB-4557-8409-1B51DEB398DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -76,11 +80,37 @@ Global
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Debug|Win32.ActiveCfg = Debug|Win32
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Debug|Win32.Build.0 = Debug|Win32
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Debug|x64.ActiveCfg = Debug|Win32
+		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Debug|x64.Build.0 = Debug|Win32
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Release|Win32.ActiveCfg = Release|Win32
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Release|Win32.Build.0 = Release|Win32
 		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Release|x64.ActiveCfg = Release|Win32
+		{59B6FCB6-27D2-45E3-8DDE-05075A67C872}.Release|x64.Build.0 = Release|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Debug|Win32.ActiveCfg = Debug|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Debug|Win32.Build.0 = Debug|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Debug|x64.ActiveCfg = Debug|x64
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Debug|x64.Build.0 = Debug|x64
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Release|Win32.ActiveCfg = Release|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Release|Win32.Build.0 = Release|Win32
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Release|x64.ActiveCfg = Release|x64
+		{41B8CAC1-B959-40CD-AC20-90CA967C1911}.Release|x64.Build.0 = Release|x64
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Debug|Win32.Build.0 = Debug|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Debug|x64.ActiveCfg = Debug|x64
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Debug|x64.Build.0 = Debug|x64
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Release|Win32.ActiveCfg = Release|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Release|Win32.Build.0 = Release|Win32
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Release|x64.ActiveCfg = Release|x64
+		{9935E0FB-69EB-4557-8409-1B51DEB398DE}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
