@@ -7,15 +7,27 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <fstream>
 #include <algorithm>
+#include <numeric>
+#include <advmath.h>
+#include <cmath>
+
+using codex::math::vector3f;
+using codex::math::vector2f;
 
 using namespace std;
 using namespace cv;
 typedef unsigned short UINT16;
+typedef UINT16 DepthType;
 
 #define WIDTH 640
 #define HEIGHT 480
 #define WIDTH_COLOR 1440
 #define HEIGHT_COLOR 1080
+
+#define NUI_CAMERA_DEPTH_NOMINAL_HORIZONTAL_FOV                 (58.5f)
+#define NUI_CAMERA_DEPTH_NOMINAL_VERTICAL_FOV                   (45.6f)
+#define V1_FOV_X NUI_CAMERA_DEPTH_NOMINAL_HORIZONTAL_FOV
+#define V1_FOV_Y NUI_CAMERA_DEPTH_NOMINAL_VERTICAL_FOV
 
 template<typename T>
 Mat vector_to_img_uc(const vector<T>& vec, int w, int h, float scale = 1) {
@@ -80,14 +92,14 @@ std::vector<std::vector<cv::Point>> findSquaresInImage(cv::Mat _image)
 	return squares;
 }
 
-cv::Mat debugSquares(std::vector<std::vector<cv::Point> > squares, cv::Mat image)
+cv::Mat debugSquares(const std::vector<std::vector<cv::Point> >& squares, cv::Mat& image)
 {
 	for (int i = 0; i < squares.size(); i++) {
 		// draw contour
 		//cv::drawContours(image, squares, i, cv::Scalar(255, 0, 0), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
 
 		// draw bounding rect
-		cv::Rect rect = boundingRect(cv::Mat(squares[i]));
+		//cv::Rect rect = boundingRect(cv::Mat(squares[i]));
 		//cv::rectangle(image, rect.tl(), rect.br(), cv::Scalar(0, 255, 0), 2, 8, 0);
 
 		// draw rotated rect
@@ -131,7 +143,7 @@ void find_rect(Mat image)
 		Scalar color(0, 100, 0);
 		//Scalar color(100);
 		drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, Point());
-		float ct_area = contourArea(contours[i]);
+		float ct_area = (float)contourArea(contours[i]);
 		if (ct_area > biggest_contour_area) {
 			biggest_contour_area = ct_area;
 			biggest_contour_index = i;
@@ -170,6 +182,78 @@ void boarder(Mat image) {
 		image.at<unsigned char>(image.rows-1, i) = 0;
 		image.at<unsigned char>(image.rows - 2, i) = 0;
 	}
+}
+
+vector3f pca(const std::vector<vector3f> &points) {
+	vector3f ave_pos;
+	for (auto &p : points)
+		ave_pos += p / (float)points.size();
+	advmath::la_matrix<float> A(3, points.size()), C;
+	for (int i = 0; i < points.size(); i++) {
+		vector3f p = points[i] - ave_pos;
+		for (int j = 0; j < 3; j++)
+			A.m[i * 3 + j] = p.v[j];
+	}
+	advmath::smmmul(C, A, A.transpose());
+	advmath::la_matrix<float> U, Vt;
+	advmath::la_vector<float> sigma;
+	advmath::ssvd(U, Vt, sigma, C, 1.f);
+	return vector3f(U.m[6], U.m[7], U.m[8]);
+}
+
+/**linear fit for a set of 2D points, 
+   points on the resulting line can be expressed as p = o + d*t, 
+* 
+* */
+void linear_regression(const vector<vector2f>& points, vector2f& o, vector2f& d) {
+	const int n = points.size();
+	assert(n >= 2);
+	float ave_x = 0.f, ave_y = 0.f;
+	float cross_sum = 0.f, sqr_sum = 0.f;
+	for (auto &p :points) {
+		ave_x += p.x/n;
+		ave_y += p.y/n;
+		cross_sum += p.x*p.y;
+		sqr_sum += p.x*p.x;
+	}
+	d.x = sqr_sum - n*ave_x*ave_x;
+	d.y = d.x==0.f?1.f:(cross_sum -n*ave_x*ave_y);
+	d.normalize();
+
+	o.x = ave_x;
+	o.y = ave_y;
+}
+
+static void calc_points(const vector<UINT16>& depth_pixels, cv::Rect roi , vector<vector3f>& point_cloud, const int width, const int height,
+	const float fovx, const float fovy)
+{
+	point_cloud.resize(roi.width * roi.height);
+	const float DegreesToRadians = 3.14159265359f / 180.0f;
+	const float xScale = tanf(fovx * DegreesToRadians * 0.5f) * 2.0f / width;
+	const float yScale = tanf(fovy * DegreesToRadians * 0.5f) * 2.0f / height;
+	int	half_width = width / 2;
+	int	half_height = height / 2;
+	for (int j = 0; j < roi.height; j++){
+		for (int i = 0; i < roi.width; i++){
+			//unsigned short pixel_depth = depth_pixels[idx];
+			//UINT16 pixel_depth = depth_image.at<UINT16>(roi.y + j, roi.x + i);
+			int x = i + roi.x;
+			int y = j + roi.y;
+
+			int index = y * width + x;
+			auto pixel_depth = depth_pixels[index];
+			float	depth = -pixel_depth * 0.001f;	//	unit in meters
+			//cout << depth << endl;
+
+			int idx = j*roi.width + i;
+			point_cloud[idx].x = -(x + 0.5f - half_width) * xScale * depth;
+			point_cloud[idx].y = (y + 0.5f - half_height) * yScale * depth;
+			point_cloud[idx].z = depth;
+			//cout << depth << endl;
+		}
+	}
+
+	return;
 }
 
 void find_squares(Mat& image, vector<vector<Point> >& squares)
@@ -239,6 +323,102 @@ void find_squares(Mat& image, vector<vector<Point> >& squares)
 	}
 }
 
+inline float lerp(float a, float b, float t) {
+	return (1-t) * a + t *b;
+}
+
+template<typename T>
+static float calc_STD(const vector<T>& v) {
+	float sum = std::accumulate(v.begin(), v.end(), 0.0f);
+	float mean = float(sum) / v.size();
+	float ret_std = 0.f;
+	for (auto i : v) {
+		ret_std += (i - mean) * (i - mean);
+	}
+	ret_std = sqrtf(ret_std / (v.size()-1));
+	return ret_std;
+}
+
+// corners: left_top, left_bottom, right_top, right_bottom
+float get_lateral_noise(const Mat& depth_gray, const Point2f corners[4])
+{
+	//cv::line(depth_gray, p1, p2, cv::Scalar(0, 0, 255), 1, 8); // blue
+	//imshow("draw line", depth_gray);
+
+	assert(corners[0].y < corners[1].y);
+	assert(corners[2].y < corners[3].y);
+	assert(corners[0].x < corners[2].x);
+	assert(corners[1].x < corners[3].x);
+
+	Mat depth_threshold;
+	threshold(depth_gray, depth_threshold, 10, 255, THRESH_BINARY);
+	imshow("depth_threshold", depth_threshold);
+
+	vector<vector2f> edge_point2ds;
+	vector<float> dist_to_line;
+	for (int i = 0; i < 2; ++i)
+	{
+		auto& top = corners[i*2];
+		auto& bottom = corners[i*2+1];
+
+		edge_point2ds.clear();
+		edge_point2ds.reserve(bottom.y - top.y + 1);
+
+		for (int y = top.y; y <= bottom.y; y++) {
+			int xx = (int)lerp(top.x, bottom.x, float(y - top.y + 1) / (bottom.y - top.y + 1));
+			int x = 10;
+			bool found = false;
+			if (i == 0) { // left
+				for (x = 10; x >= -10; x--) {
+					if (depth_gray.at<unsigned char>(y, x + xx) <= 20) {
+						--x;
+						found = true;
+						break;
+					}
+				}
+			} 
+			else { // right
+				for (x = -10; x <= 10; x++) {
+					if (depth_gray.at<unsigned char>(y, x + xx) <= 20) {
+						++x;
+						found = true;
+						break;
+					}
+				}
+			}
+
+			if (!found) {
+				std::cout << "[Error] edge not found!\n";
+				continue;
+			}
+			//cout << x + xx << endl;
+			edge_point2ds.push_back(vector2f(x + xx, y));
+		}
+
+		vector2f o, d;
+		linear_regression(edge_point2ds, o, d);
+		//cout << "o = [" << o.x << ", " << o.y << "] , d = [" << d.x << ", " << d.y << "]\n";
+
+		float A = d.y, B = -d.x, C = o.y * d.x - o.x * d.y;
+		std::cout << "fitted line: A = " << A << ",  B = " << B << ", C = " << C << endl;
+
+		float t = 1.0f / sqrtf(A*A + B*B);
+
+		dist_to_line.reserve(dist_to_line.size() + edge_point2ds.size());
+		for (auto& p : edge_point2ds) {
+			float d = fabsf(A * p.x + B * p.y + C) * t;
+			//cout << d << endl;
+			dist_to_line.push_back(d);
+			//cout << d << endl;
+		}
+
+	}
+
+	float lateral_noise = calc_STD(dist_to_line);
+	std::cout << "lateral noise: " << lateral_noise << endl;
+	return lateral_noise;
+}
+
 void process(string depth_bin_path, string IR_path, int width, int height)
 {
 	vector<UINT16> raw_depth(width * height, 0);
@@ -277,8 +457,95 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 
 	vector<vector<Point> > points;
 	find_squares(ir_mat, points);
-	debugSquares(points, depth_rgb);
-	cv::imshow("drawing", depth_rgb);
+	Mat depth_rgb_rect;
+	depth_rgb.copyTo(depth_rgb_rect);
+	debugSquares(points, depth_rgb_rect);
+	cv::imshow("draw rect", depth_rgb_rect);
+
+	cv::RotatedRect minRect = minAreaRect(cv::Mat(points[0]));
+	cv::Point2f rect_points[4];
+	minRect.points(rect_points);
+	
+	Point2f corners[4];
+	// 0 1 2 3
+	// left_top left_bottom right_top right_bottom
+	auto mean_p2 = std::accumulate(rect_points, rect_points+3, Point2f(0, 0)) / 4.0f;
+	for (auto& p : rect_points) {
+		int i = 0, j = 0;
+		if (p.x > mean_p2.x) {	// left
+			i = 1;
+		}
+		if (p.y > mean_p2.y) { // bottom
+			j = 1;
+		}
+		corners[i*2+j] = p;
+	}
+
+	int top_y    = max(corners[0].y, corners[2].y);
+	int bottom_y = min(corners[1].y, corners[3].y);
+	const int h = bottom_y - top_y;
+	assert(h > 0);
+	int y_offset_top = int(h * 0.1f);
+	int y_offset_bottom = int(h * 0.3f);
+
+	corners[2].y = corners[0].y = top_y + y_offset_top;		// top
+	corners[3].y = corners[1].y = bottom_y - y_offset_bottom;			// bottom
+
+	float lateral_noise = get_lateral_noise(depth_gray, corners);
+	assert(lateral_noise >= 0);
+	int x_offset = (3.0f * lateral_noise);
+	cout << x_offset << endl;
+
+	// get axial noise
+	int left_x  = max(corners[0].x, corners[1].x) + x_offset;
+	int right_x = min(corners[2].x, corners[3].x) - x_offset;
+	corners[0].x = corners[1].x = left_x;
+	corners[2].x = corners[3].x = right_x;
+	Scalar white(255, 255, 255);
+	Mat depth_rgb_rect2;
+	depth_rgb.copyTo(depth_rgb_rect2);
+	cv::line(depth_rgb_rect2, corners[0], corners[1], white);
+	cv::line(depth_rgb_rect2, corners[1], corners[3], white);
+	cv::line(depth_rgb_rect2, corners[3], corners[2], white);
+	cv::line(depth_rgb_rect2, corners[2], corners[0], white);
+
+	//vector<vector<Point> > points2;
+	//points2.push_back(new_points);
+	//debugSquares(points2, depth_rgb);
+	cv::imshow("draw rect 2", depth_rgb_rect2);
+
+	cv::Rect roi(left_x, corners[0].y, right_x - left_x, h);
+	//imshow("roi", depth_rgb(roi));
+	vector<vector3f> proj_points;
+	calc_points(raw_depth, roi, proj_points, width, height, V1_FOV_X, V1_FOV_Y);
+	auto normal = pca(proj_points);
+	//cout << "normal of fitted plane: [" << normal.x << ' ' << normal.y << ' ' << normal.z << ']' << endl;
+
+	vector3f mean_p3 = std::accumulate(proj_points.begin(), proj_points.end(), vector3f(0, 0, 0)) / proj_points.size();
+	cout << "mean point: [" << mean_p3.x << ' ' << mean_p3.y << ' ' << mean_p3.z << ']' << endl;
+
+	float A = normal.x, B = normal.y, C = normal.z;
+	float D = -(A * mean_p3.x + B * mean_p3.y + C * mean_p3.z);
+	cout << "fitted plane: A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
+
+	vector<float> depth_diff(roi.width * roi.height);
+	float t = 1.0f / sqrtf(A*A+B*B+C*C);
+	for (int j = 0; j < roi.height; ++j) {
+		for (int i = 0; i < roi.width; ++i) {
+			int x = i + roi.x;
+			int y = j + roi.y;
+			int idx1 = y * width + x;
+			int idx2 = j * roi.width + i;	// index in roi region
+
+			auto& p = proj_points[idx2];
+			float dist_to_plane = 0.f;
+			depth_diff[idx2] = fabsf(A*p.x + B*p.y + C*p.z + D) * t;
+			//cout << depth_diff[idx2] << endl;
+		}
+	}
+
+	float axial_noise = calc_STD(depth_diff);
+	cout << "axial noise: " << axial_noise;
 }
 
 int main()
