@@ -19,10 +19,10 @@ using namespace cv;
 typedef unsigned short UINT16;
 typedef UINT16 DepthType;
 
-#define WIDTH 640
-#define HEIGHT 480
-#define WIDTH_COLOR 1440
-#define HEIGHT_COLOR 1080
+//#define WIDTH 640
+//#define HEIGHT 480
+//#define WIDTH_COLOR 1440
+//#define HEIGHT_COLOR 1080
 
 #define NUI_CAMERA_DEPTH_NOMINAL_HORIZONTAL_FOV                 (58.5f)
 #define NUI_CAMERA_DEPTH_NOMINAL_VERTICAL_FOV                   (45.6f)
@@ -424,7 +424,7 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 	vector<UINT16> raw_depth(width * height, 0);
 	cout << depth_bin_path << endl;
 	ifstream is(depth_bin_path, ios::binary);
-	if (!is.good()) {
+	if (!is) {
 		cout << "Error: file " << depth_bin_path << " not found.\n";
 	}
 	is.read((char*)&raw_depth[0], width * height * sizeof(UINT16));
@@ -436,7 +436,8 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 	Mat depth_rgb;
 	cvtColor(depth_gray, depth_rgb, CV_GRAY2BGR);
 
-	Mat ir_mat = imread(IR_path);
+
+	Mat ir_rgb = imread(IR_path);
 	//Mat ir_mat_gray;
 	//cv::cvtColor(ir_mat, ir_mat_gray, CV_BGR2GRAY);
 	//Mat temp;
@@ -445,8 +446,8 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 	//cv::cvtColor(temp, ir_mat_gray, CV_BGR2GRAY);
 
 	
-	Mat drawing = Mat::zeros(ir_mat.size(), CV_8UC3);
-	imshow("IR", ir_mat);
+	Mat drawing = Mat::zeros(ir_rgb.size(), CV_8UC3);
+	imshow("IR", ir_rgb);
 	//debugSquares(findSquaresInImage(temp), drawing);
 	//cv::imshow("drawing", drawing);
 
@@ -456,11 +457,13 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 	//find_rect(ir_mat_gray);
 
 	vector<vector<Point> > points;
-	find_squares(ir_mat, points);
+	find_squares(ir_rgb, points);
 	Mat depth_rgb_rect;
 	depth_rgb.copyTo(depth_rgb_rect);
 	debugSquares(points, depth_rgb_rect);
 	cv::imshow("draw rect", depth_rgb_rect);
+
+	assert(points.size() > 0);
 
 	cv::RotatedRect minRect = minAreaRect(cv::Mat(points[0]));
 	cv::Point2f rect_points[4];
@@ -514,12 +517,13 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 	//debugSquares(points2, depth_rgb);
 	cv::imshow("draw rect 2", depth_rgb_rect2);
 
-	cv::Rect roi(left_x, corners[0].y, right_x - left_x, h);
-	//imshow("roi", depth_rgb(roi));
+	cv::Rect roi(left_x, top_y + y_offset_top, right_x - left_x, (bottom_y - y_offset_bottom) - (top_y + y_offset_top) );
+	imshow("roi", depth_rgb(roi));
 	vector<vector3f> proj_points;
 	calc_points(raw_depth, roi, proj_points, width, height, V1_FOV_X, V1_FOV_Y);
+
 	auto normal = pca(proj_points);
-	//cout << "normal of fitted plane: [" << normal.x << ' ' << normal.y << ' ' << normal.z << ']' << endl;
+	cout << "normal of fitted plane: [" << normal.x << ' ' << normal.y << ' ' << normal.z << ']' << endl;
 
 	vector3f mean_p3 = std::accumulate(proj_points.begin(), proj_points.end(), vector3f(0, 0, 0)) / proj_points.size();
 	cout << "mean point: [" << mean_p3.x << ' ' << mean_p3.y << ' ' << mean_p3.z << ']' << endl;
@@ -528,20 +532,15 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 	float D = -(A * mean_p3.x + B * mean_p3.y + C * mean_p3.z);
 	cout << "fitted plane: A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
 
-	vector<float> depth_diff(roi.width * roi.height);
+	vector<float> depth_diff;
+	depth_diff.reserve(proj_points.size());
 	float t = 1.0f / sqrtf(A*A+B*B+C*C);
-	for (int j = 0; j < roi.height; ++j) {
-		for (int i = 0; i < roi.width; ++i) {
-			int x = i + roi.x;
-			int y = j + roi.y;
-			int idx1 = y * width + x;
-			int idx2 = j * roi.width + i;	// index in roi region
-
-			auto& p = proj_points[idx2];
-			float dist_to_plane = 0.f;
-			depth_diff[idx2] = fabsf(A*p.x + B*p.y + C*p.z + D) * t;
-			//cout << depth_diff[idx2] << endl;
-		}
+	for (auto& p : proj_points) {
+		float fitted_z = (A * p.x + B * p.y + D) / (-C);
+		depth_diff.push_back(p.z - fitted_z);
+		//float dist_to_plane = fabsf(A*p.x + B*p.y + C*p.z + D) * t;
+		//depth_diff.push_back(dist_to_plane);
+		//cout << fitted_z << ' ' << p.z << ' ' << p.z - fitted_z << endl;
 	}
 
 	float axial_noise = calc_STD(depth_diff);
@@ -550,9 +549,12 @@ void process(string depth_bin_path, string IR_path, int width, int height)
 
 int main()
 {
-	string number_ID = "D:\\yyk\\image\\NoiseModel_1113\\1447405285-0";
-	process(number_ID + "-a.bin", number_ID + "-a-IR.bmp", 640, 480);
-	//process("D:\\yyk\\image\\NoiseModel_1113\\1447405324-1-b.bin",
+	//string number_ID = "D:\\yyk\\image\\NoiseModel_1113\\1447405285-0";
+	string root_dir = "D:\\yyk\\image\\NoiseModel_1113\\";
+	string number_ID = "1447405332-2";
+	string prefix = root_dir + number_ID;
+	process(prefix + "-a.bin", prefix + "-a-IR.bmp", 640, 480);
+	//process(prefix + "-b.bin", prefix + "-b-IR.bmp", 512, 424);
 	//	"D:\\yyk\\image\\NoiseModel_1113\\1447405324-1-b-IR.bmp", 512, 424);
 	waitKey();
 	return 0;
