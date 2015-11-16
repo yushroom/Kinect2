@@ -124,11 +124,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="KinectNoiseMode.cpp" />
+    <ClCompile Include="Error.cpp" />
+    <ClCompile Include="KinectNoiseModel.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="KinectNoiseMode.h" />
+    <ClInclude Include="Error.hpp" />
+    <ClInclude Include="KinectNoiseModel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
