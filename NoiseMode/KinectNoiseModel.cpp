@@ -22,8 +22,29 @@ bool KinectNoiseModel::get_noise(vector<Point2f> rect_points)
 	load_raw_depth_from_bin_file(m_depth_bin_path, raw_depth, width, height);
 
 	Mat depth_gray, depth_rgb;
-	depth_gray = vector_to_img_uc(raw_depth, width, height, 0.1f);
+	depth_gray = vector_to_img_uc(raw_depth, width, height);
+	cv::threshold(depth_gray, depth_gray, 255.0f * m_threshold, 255, THRESH_TOZERO_INV);
+	depth_gray *= m_scale;
 	cvtColor(depth_gray, depth_rgb, CV_GRAY2BGR);
+
+	Mat test_depth;
+	medianBlur(depth_gray, test_depth, 9);
+	threshold(test_depth, test_depth, 10, 255, THRESH_TOZERO);
+	//imshow("depth", depth_gray);
+
+	//Mat ir_gray = imread(m_IR_image_path, IMREAD_GRAYSCALE);
+	//
+	//imshow("IR", ir_gray);
+
+	//Mat mul_image(ir_gray);
+	////ir_gray.copyTo(mul_image);
+	//medianBlur(ir_gray, mul_image, 9);
+	//threshold(test_depth, test_depth, 10, 255, THRESH_TOZERO);
+	//for (int j = 0; j < height; ++j)
+	//	for (int i = 0; i < width; ++i) {
+	//		mul_image.at<unsigned char>(j, i) *= test_depth.at<unsigned char>(j, i);
+	//	}
+	//imshow("mul image", mul_image);
 
 	Point2f corners[4];
 	// 0 1 2 3
@@ -113,8 +134,11 @@ bool KinectNoiseModel::get_noise(vector<Point2f> rect_points)
 	for (int x = mid_x - 5; x <= mid_x + 5; ++x) {
 		for (int y = top_y; y < bottom_y; ++ y) {
 			int idx = y * width + x;
-			average_depth += raw_depth[idx] * 0.001f;
-			count ++;
+			auto d = raw_depth[idx];
+			if (d > 10) {
+				average_depth += raw_depth[idx] * 0.001f;
+				count ++;
+			}
 		}
 	}
 	average_depth /= (float)count;
@@ -142,12 +166,24 @@ bool KinectNoiseModel::get_noise(vector<Point2f> rect_points)
 	return true;
 }
 
-
 bool KinectNoiseModel1::find_rect_in_IR( Mat& image, vector<Point>& out_points )
 {
 	// blur will enhance edge detection
 	Mat blurred(image);
-	medianBlur(image, blurred, 9);
+	image.copyTo(blurred);
+	//threshold(blurred, blurred, 10, 255, CV_THRESH_TOZERO);
+	medianBlur(blurred, blurred, 9);
+	//threshold(blurred, blurred, 10, 255, CV_THRESH_BINARY);
+	//Mat test_image1, test_image2;
+	//image.copyTo(test_image);
+	//medianBlur(test_image, test_image, 3);
+	//threshold(test_image, test_image, 20, 255, CV_THRESH_BINARY);
+	//bilateralFilter(image, test_image1, 50, 50, 50);
+	//Canny(test_image1, test_image2, 20, 30);
+	//imshow("test_image", test_image2);
+	//waitKey();
+
+	//imshow("debug squares", blurred);
 
 	Mat gray0(blurred.size(), CV_8U), gray;
 	vector<vector<Point> > contours;
@@ -185,6 +221,9 @@ bool KinectNoiseModel1::find_rect_in_IR( Mat& image, vector<Point>& out_points )
 			
 			for (size_t i = 0; i < contours.size(); i++)
 			{
+				//drawContours(gray, contours, i, Scalar(128, 0, 0));
+				//imshow("gray", gray);
+				//waitKey();
 				// approximate contour with accuracy proportional
 				// to the contour perimeter
 				approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true)*0.02, true);
@@ -193,7 +232,7 @@ bool KinectNoiseModel1::find_rect_in_IR( Mat& image, vector<Point>& out_points )
 				// area may be positive or negative - in accordance with the
 				// contour orientation
 				if (approx.size() == 4 &&
-					fabs(contourArea(Mat(approx))) > 1000 &&
+					fabs(contourArea(Mat(approx))) > 400 &&
 					isContourConvex(Mat(approx)))
 				{
 					double maxCosine = 0;
@@ -204,7 +243,7 @@ bool KinectNoiseModel1::find_rect_in_IR( Mat& image, vector<Point>& out_points )
 						maxCosine = MAX(maxCosine, cosine);
 					}
 
-					if (maxCosine < 0.3)
+					//if (maxCosine < 0.3)
 						squares.push_back(approx);
 				}
 			}	
@@ -216,6 +255,10 @@ bool KinectNoiseModel1::find_rect_in_IR( Mat& image, vector<Point>& out_points )
 		return false;
 	}
 	out_points = squares[0];
+
+	debugSquares(squares, blurred);
+	imshow("debug squares", blurred);
+
 	return true;
 }
 
@@ -260,7 +303,6 @@ bool KinectNoiseModel2::find_rect_in_IR( Mat& image, vector<Point>& out_points )
 	return true;
 }
 
-
 template<typename T>
 float calc_STD( const vector<T>& v )
 {
@@ -286,7 +328,7 @@ float calc_lateral_noise( const Mat& depth_gray, const Point2f corners[4], float
 
 	Mat depth_threshold;
 	const int threshold_value = 30;
-	threshold(depth_gray, depth_threshold, threshold_value, 255, THRESH_BINARY);
+	threshold(depth_gray, depth_threshold, threshold_value, 255, THRESH_TOZERO);
 	//imshow("depth_threshold", depth_threshold);
 	//depth_gray = depth_threshold;
 	depth_threshold.copyTo(depth_gray);
@@ -319,8 +361,8 @@ float calc_lateral_noise( const Mat& depth_gray, const Point2f corners[4], float
 			bool found = false;
 			const int offset = 10;
 			if (edge_index == 0) { // left
-				for (x = offset; x >= -offset; x--) {
-					if (depth_gray.at<unsigned char>(y, x + xx) <= 128) {
+				for (x = -offset; x <= offset; x++) {
+					if (depth_gray.at<unsigned char>(y, x + xx) >= 10) {
 						++x;
 						found = true;
 						break;
@@ -328,8 +370,8 @@ float calc_lateral_noise( const Mat& depth_gray, const Point2f corners[4], float
 				}
 			} 
 			else { // right
-				for (x = -offset; x <= offset; x++) {
-					if (depth_gray.at<unsigned char>(y, x + xx) <= 128) {
+				for (x = offset; x >= -offset; x--) {
+					if (depth_gray.at<unsigned char>(y, x + xx) >= 10) {
 						--x;
 						found = true;
 						break;
@@ -417,7 +459,7 @@ float calc_lateral_noise( const Mat& depth_gray, const Point2f corners[4], float
 
 void calc_points( const vector<UINT16>& depth_pixels, cv::Rect roi , vector<vector3f>& point_cloud, const int width, const int height, const float fovx, const float fovy )
 {
-	point_cloud.resize(roi.width * roi.height);
+	//point_cloud.resize(roi.width * roi.height);
 	const float DegreesToRadians = 3.14159265359f / 180.0f;
 	const float xScale = tanf(fovx * DegreesToRadians * 0.5f) * 2.0f / width;
 	const float yScale = tanf(fovy * DegreesToRadians * 0.5f) * 2.0f / height;
@@ -432,13 +474,23 @@ void calc_points( const vector<UINT16>& depth_pixels, cv::Rect roi , vector<vect
 
 			int index = y * width + x;
 			auto pixel_depth = depth_pixels[index];
+			if (pixel_depth < 10) {
+				continue;
+			}
 			float	depth = -pixel_depth * 0.001f;	//	unit in meters
 			//cout << depth << endl;
 
-			int idx = j*roi.width + i;
-			point_cloud[idx].x = -(x + 0.5f - half_width) * xScale * depth;
-			point_cloud[idx].y = (y + 0.5f - half_height) * yScale * depth;
-			point_cloud[idx].z = depth;
+			//int idx = j*roi.width + i;
+			//point_cloud[idx].x = -(x + 0.5f - half_width) * xScale * depth;
+			//point_cloud[idx].y = (y + 0.5f - half_height) * yScale * depth;
+			//point_cloud[idx].z = depth;
+
+			vector3f v;
+			v.x = -(x + 0.5f - half_width) * xScale * depth;
+			v.y = (y + 0.5f - half_height) * yScale * depth;
+			v.z = depth;
+			point_cloud.push_back(v);
+
 			//cout << depth << endl;
 		}
 	}

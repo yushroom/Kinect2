@@ -60,23 +60,23 @@ static const bool write_file = false;
 
 #define EXTRINSICS_FILE_PATH "D:\\yyk\\image\\extrinsics.yml"
 #define INTRINSICS_FILE_PATH "D:\\yyk\\image\\intrinsics.yml"
-#define TABLE1 "D:\\yyk\\image\\table1.txt"
-#define TABLE2 "D:\\yyk\\image\\table2.txt"
+#define TABLE1 "D:\\yyk\\image\\table1_zfx.txt"
+#define TABLE2 "D:\\yyk\\image\\table2_zfx.txt"
 
-#define V1_FX (586.881)
-#define V1_FY (585.482)
-#define V1_CX (321.222)
-#define V1_CY (232.1)
+#define V1_FX (587.088)
+#define V1_FY (585.688)
+#define V1_CX (321.198)
+#define V1_CY (232.202)
 
 //#define V2_FX (364.440)
 //#define V2_FY (363.688)
 //#define V2_CX (259.818)
 //#define V2_CY (207.523)
 
-#define V2_RESIZED_FX (413.864)
-#define V2_RESIZED_FY (412.790)
-#define V2_RESIZED_CX (325.169)
-#define V2_RESIZED_CY (234.573)
+#define V2_RESIZED_FX (415.035)
+#define V2_RESIZED_FY (413.996)
+#define V2_RESIZED_CX (325.237)
+#define V2_RESIZED_CY (234.963)
 
 const int	depth_width = 640;
 const int	depth_height = 480;
@@ -967,7 +967,7 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 #define TEST_SAVE_TEMP_FILE_DIR "D:\\yyk\\capture\\test\\temp\\"
 //#define TEST_OUPUT_BIN_PATH_v2tov1 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-aa.bin"
 //#define TEST_OUPUT_BIN_PATH_v1tov2 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-bb.bin"
-#define PATH_FILE "D:\\yyk\\capture\\corner\\path.txt"
+#define PATH_FILE "D:\\yyk\\capture\\desk\\path.txt"
  
 int main(int argc, char* argv[])
 {
@@ -986,35 +986,43 @@ int main(int argc, char* argv[])
 	ReadCalibratedUndistortionTable(undistortLookupTable[0], WIDTH, HEIGHT, TABLE1);
 	ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
 
-	//string path_file(PATH_FILE);
-	ifstream fin(PATH_FILE);
-	string str;
-	vector<string> image_path_list;
-	while (fin >> str) {
-		image_path_list.push_back(str);
-	}
-	while (image_path_list.size() % 4 != 0) {
-		image_path_list.pop_back();
-	}
-	cout << "image path list: " << image_path_list.size() << endl;
-	
-	bool save_temp_file = true;
+	string path_file[] = {"D:\\yyk\\capture\\corner\\path.txt", "D:\\yyk\\capture\\desk\\path.txt", "D:\\yyk\\capture\\person\\path.txt"};
 
-	//int count = 100;
+	for (int path_index = 0; path_index < 3; path_index++)
+	{
+		//string path_file(PATH_FILE);
+		ifstream fin(path_file[path_index]);
+		string str;
+		vector<string> image_path_list;
+		while (fin >> str) {
+			image_path_list.push_back(str);
+		}
+		while (image_path_list.size() % 4 != 0) {
+			image_path_list.pop_back();
+		}
+		cout << "image path list: " << image_path_list.size() << endl;
 
-	for (int i = 0; i < image_path_list.size() / 4; ++i) {
-		const string& IR1_path		= image_path_list[i * 4];
-		const string& depth1_path	= image_path_list[i * 4 + 1];
-		const string& IR2_path		= image_path_list[i * 4 + 2];
-		const string& depth2_path	= image_path_list[i * 4 + 3];
-		string prefix = IR1_path.substr(0, IR1_path.find("-a.bmp"));
-		string bin_path_v1tov2 = prefix + "-bb.bin";
-		string bin_path_v2tov1 = prefix + "-aa.bin";
-		bin_prefix = prefix;
-		process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);	
+		bool save_temp_file = false;
 
-		//if (--count <= 0) break;
+		//int count = 100;
+
+		for (int i = 0; i < image_path_list.size() / 4; ++i) {
+			const string& IR1_path		= image_path_list[i * 4];
+			const string& depth1_path	= image_path_list[i * 4 + 1];
+			const string& IR2_path		= image_path_list[i * 4 + 2];
+			const string& depth2_path	= image_path_list[i * 4 + 3];
+			string prefix = IR1_path.substr(0, IR1_path.find("-a.bmp"));
+			string bin_path_v1tov2 = prefix + "-bb-1119.bin";
+			string bin_path_v2tov1 = prefix + "-aa-1119.bin";
+			bin_prefix = prefix;
+			process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);	
+
+			//if (--count <= 0) break;
+		}
+
 	}
+
+
 	return 0;
 }
 

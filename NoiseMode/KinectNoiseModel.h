@@ -10,6 +10,8 @@
 #include <numeric>
 #include <advmath.h>
 #include <cmath>
+#include <io.h>
+#include <algorithm>
 
 #include "Error.hpp"
 
@@ -33,12 +35,13 @@ typedef UINT16 DepthType;
 static double angle(cv::Point pt1, cv::Point pt2, cv::Point pt0);
 
 template<typename T>
-static Mat vector_to_img_uc(const vector<T>& vec, int w, int h, float scale = 1) {
+static Mat vector_to_img_uc(const vector<T>& vec, int w, int h) {
 	Mat img(h, w, CV_8U);
+	auto max_ele = *std::max_element(vec.begin(), vec.end());
 	for (int j = 0; j < h; ++j) {
 		for (int i = 0; i < w; ++i) {
 			int idx = j * w + i;
-			img.at<unsigned char>(j, i) = unsigned char(vec[idx] * scale);
+			img.at<unsigned char>(j, i) = unsigned char(float(vec[idx]) / max_ele * 255.f);
 		}
 	}
 	return img;
@@ -47,6 +50,29 @@ static Mat vector_to_img_uc(const vector<T>& vec, int w, int h, float scale = 1)
 inline float lerp(float a, float b, float t) {
 	return (1-t) * a + t *b;
 }
+
+static cv::Mat debugSquares(const std::vector<std::vector<cv::Point> >& squares, cv::Mat& image)
+{
+	for (int i = 0; i < squares.size(); i++) {
+		// draw contour
+		//cv::drawContours(image, squares, i, cv::Scalar(255, 0, 0), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
+
+		// draw bounding rect
+		//cv::Rect rect = boundingRect(cv::Mat(squares[i]));
+		//cv::rectangle(image, rect.tl(), rect.br(), cv::Scalar(0, 255, 0), 2, 8, 0);
+
+		// draw rotated rect
+		cv::RotatedRect minRect = minAreaRect(cv::Mat(squares[i]));
+		cv::Point2f rect_points[4];
+		minRect.points(rect_points);
+		for (int j = 0; j < 4; j++) {
+			cv::line(image, rect_points[j], rect_points[(j + 1) % 4], cv::Scalar(0, 0, 255), 1, 8); // blue
+		}
+	}
+
+	return image;
+}
+
 
 template<typename T>
 static float calc_STD(const vector<T>& v);
@@ -76,6 +102,8 @@ protected:
 	int height;
 	string m_IR_image_path;
 	string m_depth_bin_path;
+	float m_threshold;
+	float m_scale;
 
 	virtual bool find_rect_in_IR(Mat& image, vector<Point>& out_points) = 0;
 
@@ -95,7 +123,34 @@ public:
 	float m_distance;
 	float m_angle;
 
-	virtual bool process() = 0;
+	virtual bool process() {
+		string corners_file_name = m_IR_image_path.substr(0, m_IR_image_path.size() - 3) + "txt";
+		if (_access_s(corners_file_name.c_str(), 0) != 0) {
+			warning("corner file %s not exists. skip this image.\n", corners_file_name.c_str());
+			return false;
+		}
+		
+		vector<Point2f> corners(4);
+
+		ifstream fin(corners_file_name);
+		vector<int> c;
+		int t;
+		while (fin >> t)
+			c.push_back(t);
+		if (c.size() != 8) {
+			error("corners in file not match!\n");
+			return false;
+		}
+		else {
+			for (int i = 0; i < 4; ++i) {
+				corners[i].x = c[i * 2];
+				corners[i].y = c[i * 2 + 1]; 
+			}
+			cout << "    load corners from file.\n";
+		}
+
+		return get_noise(corners);
+	}
 };
 
 class KinectNoiseModel1 : public KinectNoiseModel {
@@ -107,24 +162,26 @@ public:
 		: KinectNoiseModel(depth_bin_path, IR_image_path) {
 		width = 640;
 		height = 480;
+		m_threshold = 0.6f;
+		m_scale = 2.0f;
 	}
 
-	virtual bool process() override {
-		Mat ir_rgb = imread(m_IR_image_path);
-		assert(ir_rgb.rows == height && ir_rgb.cols == width);
+	//virtual bool process() override {
+	//	Mat ir_rgb = imread(m_IR_image_path);
+	//	assert(ir_rgb.rows == height && ir_rgb.cols == width);
 
-		vector<Point> points;
-		if (!find_rect_in_IR(ir_rgb, points)) {
-			//cout << "rect not found\n";
-			error("rect not found\n");
-			return false;
-		}
-		cv::RotatedRect minRect = minAreaRect(cv::Mat(points));
-		cv::Point2f rect_points[4];
-		minRect.points(rect_points);
-		vector<Point2f> points2(rect_points, rect_points + 4);
-		return get_noise(points2);
-	}
+	//	vector<Point> points;
+	//	if (!find_rect_in_IR(ir_rgb, points)) {
+	//		//cout << "rect not found\n";
+	//		error("rect not found\n");
+	//		return false;
+	//	}
+	//	cv::RotatedRect minRect = minAreaRect(cv::Mat(points));
+	//	cv::Point2f rect_points[4];
+	//	minRect.points(rect_points);
+	//	vector<Point2f> points2(rect_points, rect_points + 4);
+	//	return get_noise(points2);
+	//}
 };
 
 class KinectNoiseModel2 : public KinectNoiseModel {
@@ -136,22 +193,24 @@ public:
 		: KinectNoiseModel(depth_bin_path, IR_image_path) {
 		width = 512;
 		height = 424;
+		m_threshold = 0.3f;
+		m_scale = 5.f;
 	}
 
-	virtual bool process() override {
-		Mat IR_gray = imread(m_IR_image_path, CV_LOAD_IMAGE_GRAYSCALE);
-		assert(IR_gray.rows == height && IR_gray.cols == width);
+	//virtual bool process() override {
+	//	Mat IR_gray = imread(m_IR_image_path, CV_LOAD_IMAGE_GRAYSCALE);
+	//	assert(IR_gray.rows == height && IR_gray.cols == width);
 
-		vector<Point> points;
-		if (!find_rect_in_IR(IR_gray, points)) {
-			//cout << "rect not found\n";
-			error("rect not found\n");
-			return false;
-		}
-		cv::RotatedRect minRect = minAreaRect(cv::Mat(points));
-		cv::Point2f rect_points[4];
-		minRect.points(rect_points);
-		vector<Point2f> points2(rect_points, rect_points + 4);
-		return get_noise(points2);
-	}
+	//	vector<Point> points;
+	//	if (!find_rect_in_IR(IR_gray, points)) {
+	//		//cout << "rect not found\n";
+	//		error("rect not found\n");
+	//		return false;
+	//	}
+	//	cv::RotatedRect minRect = minAreaRect(cv::Mat(points));
+	//	cv::Point2f rect_points[4];
+	//	minRect.points(rect_points);
+	//	vector<Point2f> points2(rect_points, rect_points + 4);
+	//	return get_noise(points2);
+	//}
 };
