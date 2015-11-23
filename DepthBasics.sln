@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DepthBasics", "DepthBasics-D2D.vcxproj", "{4556CB68-B48D-4C18-B29D-032B06DC7E8C}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rectDetector", "rectDetector\rectDetector.vcxproj", "{EEAED183-CE20-452F-B3D2-C4A554CE36EE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Depth2Ply", "Depth2Ply\Depth2Ply.vcxproj", "{4F131194-730A-4CEC-AEC4-DB38D1782A96}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "depthFit", "depthFit\depthFit.vcxproj", "{21C720BF-4C87-44D0-95BA-C336245E0D85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -139,6 +141,18 @@ Global
 		{4F131194-730A-4CEC-AEC4-DB38D1782A96}.Release|Win32.Build.0 = Release|Win32
 		{4F131194-730A-4CEC-AEC4-DB38D1782A96}.Release|x64.ActiveCfg = Release|x64
 		{4F131194-730A-4CEC-AEC4-DB38D1782A96}.Release|x64.Build.0 = Release|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Debug|Mixed Platforms.Build.0 = Debug|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Debug|Win32.ActiveCfg = Debug|Win32
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Debug|Win32.Build.0 = Debug|Win32
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Debug|x64.ActiveCfg = Debug|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Debug|x64.Build.0 = Debug|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|Mixed Platforms.Build.0 = Release|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|Win32.ActiveCfg = Release|Win32
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|Win32.Build.0 = Release|Win32
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|x64.ActiveCfg = Release|x64
+		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

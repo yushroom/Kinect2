@@ -8,3 +8,6 @@
 
 *.sdf
 *.opensdf
+/depthFit/Debug
+/depthFit/Release
+/depthFit/x64
