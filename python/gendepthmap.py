@@ -15,7 +15,7 @@ try:
     height = int(sys.argv[4])
 
 except:
-    print('Usage: und.py $src $dest $width $height $und_table')
+    print('Usage: gendepthmap.py $src $dest_folder $width $height')
     exit()
 src = open(src_path, 'rb')
 idx = 0
