@@ -13,5 +13,5 @@ std::vector<DEPTH_TYPE> fit_depth(
 	const double sigma_v,
 	const double beta_v1,
 	const double beta_v2,
-	const double beta_d,
-	int niter);
+	const int niter,
+	const char *pre);
