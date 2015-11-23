@@ -5,7 +5,7 @@
 /IR2IR/x64
 /calibration/example_calibration.dir
 /calibration/Release
-
+*.vcxproj.user
 *.sdf
 *.opensdf
 /depthFit/Debug
