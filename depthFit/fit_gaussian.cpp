@@ -31,6 +31,17 @@ inline void diff(
 		result[i] = image1[i] - image2[i];
 }
 
+inline std::vector<float> test_gaussian_sigma(
+	const float sigma,
+	const int half_gaussian_width) {
+	std::vector<float> result;
+	for (int i = 0; i < half_gaussian_width; ++i) {
+		float ex = -i*i / (2 * sigma*sigma);
+		result.push_back(exp(ex));
+	}
+	return result;
+}
+
 inline void fit_gaussian_helper(
 	GAUSSIAN_IMAGE& result,
 	std::vector<bool>& mask,
@@ -159,19 +170,28 @@ std::vector<DEPTH_TYPE> fit_depth(
 	const int niter,
 	const char* pre)
 {
+/*
+	auto x = test_gaussian_sigma(1, 5);
+	for (int i = 0; i < x.size(); ++i)
+		printf("%g%c", x[i], i == x.size() - 1 ? '\n' : ' ');
+	getchar();
+	*/
 	assert(depth_frame_v1.size() == depth_frame_v2.size());
 	assert(depth_frame_v1.size() == depth_width*depth_height);
 	DEPTH_IMAGE result = depth_frame_v1;
 	DEPTH_IMAGE bias, last;
 	std::vector<bool> maskd, maskb;
 	GAUSSIAN_IMAGE gd, gb;
+#ifdef DEBUG_DIFF
 	FILE *rfp = nullptr;
 	if (pre) {
 		char path[_MAX_PATH];
 		sprintf_s(path, "%s//diff.txt", pre);
 		fopen_s(&rfp, path, "w");
 	}
+#endif
 	for (int it = 1; it <= niter; ++it) {
+		printf("%d\n", it);
 		diff(depth_frame_v2, result, bias);
 		last = result;
 		fit_gaussian_helper(
@@ -194,7 +214,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 			sigma_i,
 			sigma_v
 			);
-
+#ifdef DEBUG_DIFF
 		if (pre) {
 			char d_path[_MAX_PATH], b_path[_MAX_PATH];
 			char mud_path[_MAX_PATH], mub_path[_MAX_PATH];
@@ -222,6 +242,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 			write_normalized_vector(mub, std::string(mub_path), depth_width, depth_height);
 			write_normalized_vector(sigmab, std::string(sigmab_path), depth_width, depth_height);
 		}
+#endif
 		const int half_gaussian_width = (gaussian_width - 1) / 2;
 		for (int i = 0; i < depth_height; ++i)
 			for (int j = 0; j < depth_width; ++j) {
@@ -235,20 +256,19 @@ std::vector<DEPTH_TYPE> fit_depth(
 				(beta_v1*depth_frame_v1[idx] + beta_d*gd[idx].mu + beta_v2*beta_d / (beta_v2 + beta_d)*(depth_frame_v2[idx] - gb[idx].mu))
 				/ (beta_v1 + beta_d + beta_v2*beta_d / (beta_v2+beta_d));
 			}
+#ifdef DEBUG_DIFF
 		DEPTH_IMAGE delta;
 		diff(last, result, delta);
+
 		printf_s("min delta:%g max delta:%g\n", *std::min_element(delta.begin(), delta.end()), *std::max_element(delta.begin(), delta.end()));
 		std::cout << l2norm(delta) << std::endl;
+
 		if (rfp)
 			fprintf_s(rfp, "%f\n", l2norm(delta));
-		{
-			//int ii = 427, jj = 305;
-			//int idxi = jj*depth_width + ii;
-			//std::cout << depth_frame_v1[idxi] << " " << result[idxi] << std::endl;
-			//printf("%f %f %f %f\n", gb[idxi].mu, gb[idxi].mu, gd[idxi].mu, gd[idxi].sigma);
-			//getchar();
-		}
+#endif	
 	}
+#ifdef DEBUG_DIFF
 	if (rfp) fclose(rfp);
+#endif
 	return result;
 }
