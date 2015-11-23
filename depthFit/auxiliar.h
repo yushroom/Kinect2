@@ -69,7 +69,7 @@ bool MergeBinFromFile(const std::string &path,std::vector<std::vector<T>>&depthV
 	if (depthVec.empty()) return false;
 	FILE *fp = NULL;
 	errno_t err_fp;
-	err_fp = fopen_s(&fp,path.c_str(),"rb");
+	err_fp = fopen_s(&fp,path.c_str(),"wb");
 	if (err_fp != 0) {
 		printf("ERROR:cannot open file :%s\n", path.c_str());
 		return false;
@@ -79,7 +79,7 @@ bool MergeBinFromFile(const std::string &path,std::vector<std::vector<T>>&depthV
 	for (int i = 0; i < depthVec.size(); i++) {
 		for (int j = 0; j < depthVec[i].size(); j++) 
 			depth[j] = static_cast<RAW_DEPTH_TYPE>(depthVec[i][j]);
-		fwrite(fp,sizeof(RAW_DEPTH_TYPE),ele_cnt,fp);
+		fwrite(depth,sizeof(RAW_DEPTH_TYPE),ele_cnt,fp);
 	}
 	delete[]depth;
 	fclose(fp);
