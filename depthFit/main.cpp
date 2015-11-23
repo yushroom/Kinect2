@@ -52,7 +52,7 @@ int main(int argc,char **argv){
 	const double	beta1 = 1.0 / simga1 / simga1;
 	const double	beta2 = 1.0 / sigma2 / sigma2;
 	const int		niter = 100;
-	const char		pre[] = "D:\\yyk\\data\\result";
+	const char		pre[] = "D:\\cvpr\\desk\\fit_gaussian";
 	
 	for (int i = 0; i < params->frames; i++) {
 		fit_depth(
