@@ -12,7 +12,7 @@ public:
 	static const int        cDepthHeight = 480;
 
 	
-	static const bool		cRevieveRGB = true;
+	static const bool		cRevieveRGB = false;
 	static const int		cRGBWidth = 1280;
 	static const int		cRGBHeight = 960;
 

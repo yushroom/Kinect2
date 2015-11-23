@@ -283,7 +283,7 @@ void KinectSensorV2::Update()
 
 		if (SUCCEEDED(hr))
 		{
-			ProcessColor(nTime, pBuffer, nWidth, nHeight);
+			//ProcessColor(nTime, pBuffer, nWidth, nHeight);
 		}
 
 		SafeRelease(pFrameDescription);

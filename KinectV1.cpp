@@ -349,7 +349,7 @@ HRESULT KinectSensorV1::CreateFirstConnected()
 				m_hNextColorFrameEvent,
 				&m_pColorStreamHandle);
 		}
-		if (SUCCEEDED(hr))
+		if (cRevieveRGB && SUCCEEDED(hr))
 		{
 			// Create an event that will be signaled when rgb data is available
 			m_hNextRGBFrameEvent = CreateEvent(NULL, TRUE, FALSE, NULL);

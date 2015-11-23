@@ -22,8 +22,8 @@
 #include <locale.h> 
 
 // save IR and depth per frame
-#define CAPTURE_MODE
-#define SAVE_IR_AND_DEPTH
+//#define CAPTURE_MODE
+//#define SAVE_IR_AND_DEPTH
 bool capture = false;
 
 #define ACCESS _access;
@@ -40,8 +40,8 @@ using namespace std;
 #define CAPTURE_DIR			"D:\\yyk\\capture"
 //#define POINTCLOUND1			PREFIX "a_.ply"
 //#define POINTCLOUND2			PREFIX "b_point2.ply"
-#define IMAGE_PATH_PREFIX_A		"D:\\yyk\\image"
-#define IMAGE_PATH_PREFIX_W		L"D:\\yyk\\image"
+#define IMAGE_PATH_PREFIX_A		"D:\\yyk\\image\\IRandRGB\\"
+#define IMAGE_PATH_PREFIX_W		L"D:\\yyk\\image\\IRandRGB\\"
 
 /// <summary>
 /// Entry point for the application
@@ -670,7 +670,7 @@ void CDepthBasics::GeneratePointCloud()
 
 	char path[MAX_PATH];
 
-	sprintf(path, "%s\\a_%04d.ply", PREFIX, m_nScreenShotCount);
+	sprintf(path, "D:\\yyk\\image\\Test_IR_Depth_1116\\a_%04d.ply", PREFIX, m_nScreenShotCount);
 
 	writePly(points_und1, m_kinectV1.rawInfraredData, path);
 	info("save file to %s\n", path);
@@ -679,7 +679,7 @@ void CDepthBasics::GeneratePointCloud()
 	calc_points(m_kinectV2.rawDepthData, m_kinectV2.rawInfraredData, points_und, KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight,
 		KinectSensorV2::fovx, KinectSensorV2::fovy);
 
-	sprintf(path, "%s\\b_%04d.ply", PREFIX, m_nScreenShotCount);
+	sprintf(path, "D:\\yyk\\image\\Test_IR_Depth_1116\\b_%04d.ply", PREFIX, m_nScreenShotCount);
 
 	writePly(points_und, m_kinectV2.rawInfraredData, path);
 	info("save file to %s\n", path);
@@ -716,17 +716,19 @@ void CDepthBasics::SaveInfraredImage()
 	std::string depth_bin_path_1 = ss.str() + "\\a.bin";
 	std::string depth_bin_path_2 = ss.str() + "\\b.bin";
 #else
-	std::stringstream ss;
-	ss << IMAGE_PATH_PREFIX_A << "\\" << now << '-' << m_nScreenShotCount;
-	CreatDir(ss.str().c_str());
+	stringstream ss;
+	//ss << IMAGE_PATH_PREFIX_A << "test_data\\" << now << '-' << m_nScreenShotCount;
+	ss << "D:\\yyk\\image\\NoiseModel_1119_5\\" << now << '-' << m_nScreenShotCount;
+	//CreatDir(ss.str().c_str());
 	//std::string ir_path_1 = ss.str() + "\\a.bmp";
-	std::string ir_path_2 = ss.str() + "\\b-IR.bmp";
-	//std::string depth_path_1 = ss.str() + "\\a-depth.bmp";
-	//std::string depth_path_2 = ss.str() + "\\b-depth.bmp";
-	//std::string depth_bin_path_1 = ss.str() + "\\a.bin";
-	//string depth_bin_path_2 = ss.str() + "\\b.bin";
-	string color_path_1 = ss.str() + "\\a-color.bmp";
-	string color_path_2 = ss.str() + "\\b-color.bmp";
+	string ir_path_2		= ss.str() + "-b.bmp";
+	string ir_path_1		= ss.str() + "-a.bmp";
+	//std::string depth_path_1 = ss.str() + "-a-depth.bmp";
+	//std::string depth_path_2 = ss.str() + "-b-depth.bmp";
+	string depth_bin_path_1 = ss.str() + "-a.bin";
+	string depth_bin_path_2 = ss.str() + "-b.bin";
+	//string color_path_1		= ss.str() + "-a-color.bmp";
+	//string color_path_2		= ss.str() + "-b-color.bmp";
 #endif // !CAPTURE_MODE
 
 #ifdef SAVE_IR_AND_DEPTH
@@ -764,15 +766,26 @@ void CDepthBasics::SaveInfraredImage()
 	sava_raw_depth(m_kinectV2.rawDepthData, KinectSensorV2::cDepthWidth * KinectSensorV2::cDepthHeight, depth_bin_path_2.c_str());
 	fprintf_s(m_pTimestampFilePtrV2, "%lld\n", m_kinectV2.depth_timestamp);
 	info("Raw depth b [%s] save \n", depth_bin_path_2.c_str());
-	m_nScreenShotCount++;
 
 #else // SAVE_IR_AND_DEPTH
-	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_colorRGBX), KinectSensorV1::cRGBWidth, KinectSensorV1::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_1).c_str());
-	info("IR image a [%s] save \n", color_path_1.c_str());
-	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pRGBX), KinectSensorV2::cRGBWidth, KinectSensorV2::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_2).c_str());
-	info("IR image b [%s] save \n", color_path_2.c_str());
+	//SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_colorRGBX), KinectSensorV1::cRGBWidth, KinectSensorV1::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_1).c_str());
+	//info("Color image a [%s] save \n", color_path_1.c_str());
+	//SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pRGBX), KinectSensorV2::cRGBWidth, KinectSensorV2::cRGBHeight, sizeof(RGBQUAD) * 8, StringToWstring(color_path_2).c_str());
+	//info("Color image b [%s] save \n", color_path_2.c_str());
+	//SaveBitmapToFile(m_kinectV1.m_depthRGBX, KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, StringToWstring(depth_path_1).c_str());
+	//info("Depth image a [%s] save \n", depth_path_1.c_str());
+	//SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pDepthRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, StringToWstring(depth_path_2).c_str());
+	//info("Depth image b [%s] save \n", depth_path_2.c_str());
+	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV1.m_pTempColorBuffer), KinectSensorV1::cDepthWidth, KinectSensorV1::cDepthHeight, sizeof(RGBQUAD) * 8, StringToWstring(ir_path_1).c_str());
+	info("IR image b [%s] save \n", ir_path_1.c_str());
 	SaveBitmapToFile(reinterpret_cast<BYTE*>(m_kinectV2.m_pInfraredRGBX), KinectSensorV2::cDepthWidth, KinectSensorV2::cDepthHeight, sizeof(RGBQUAD) * 8, StringToWstring(ir_path_2).c_str());
 	info("IR image b [%s] save \n", ir_path_2.c_str());
+	sava_raw_depth(m_kinectV1.rawDepthData, KinectSensorV1::cDepthWidth * KinectSensorV1::cDepthHeight, depth_bin_path_1.c_str());
+	info("Raw depth a [%s] save \n", depth_bin_path_1.c_str());
+	sava_raw_depth(m_kinectV2.rawDepthData, KinectSensorV2::cDepthWidth * KinectSensorV2::cDepthHeight, depth_bin_path_2.c_str());
+	info("Raw depth b [%s] save \n", depth_bin_path_2.c_str());
+
 #endif // SAVE_IR_AND_DEPTH
 
+	m_nScreenShotCount++;
 }
