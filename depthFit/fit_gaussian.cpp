@@ -191,7 +191,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 	}
 #endif
 	for (int it = 1; it <= niter; ++it) {
-		printf("%d\n", it);
+		printf("%dth iter\r", it);
 		diff(depth_frame_v2, result, bias);
 		last = result;
 		fit_gaussian_helper(
@@ -267,6 +267,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 			fprintf_s(rfp, "%f\n", l2norm(delta));
 #endif	
 	}
+	printf("\n");
 #ifdef DEBUG_DIFF
 	if (rfp) fclose(rfp);
 #endif
