@@ -70,7 +70,7 @@ int main(int argc,char **argv){
 			pre
 			);
 	}
-	MergeBinFromFile(params->output_folder_path + "\ret.bin",ret_depths);
+	MergeBinFromFile(params->output_folder_path + "\\ret.bin",ret_depths);
 
 	return 0;
 }
