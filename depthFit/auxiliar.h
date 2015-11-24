@@ -117,6 +117,20 @@ bool FileExists(const char* strFilename) {
 
 
 
+namespace iniConfig{
+	std::string iniFilePath;
+	void setiniFile(const std::string &);
+	int readIntValue(const char *section,const char *key,int defalutValue);
+	float readFloatValue(const char *section,const char *key,float defalutValue);
+	std::string readStringValue(const char *section,const char *key,const char *defalutValue);
+};
+
+
+int iniConfig::readIntValue(const char *section, const char *key, int defalutValue) {
+	int ret = GetPrivateProfileInt(section,key,defalutValue,iniFilePath.c_str());
+	return ret;
+}
+
 
 
 struct Parameters_T{
@@ -186,6 +200,7 @@ Parameters_T *readIniFile(const std::string &ini_path) {
 	printf("%20s: %20s\n", "output_folder_path", params->output_folder_path.c_str());
 
 #endif
+	return params;
 ERR:
 	delete params;
 	return NULL;

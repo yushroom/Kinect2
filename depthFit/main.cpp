@@ -47,8 +47,8 @@ int main(int argc,char **argv){
 			sigma_v,
 			beta1,
 			beta2,
-			niter,
-			pre
+			niter
+			//pre
 			);
 	}
 	MergeBinFromFile(params->output_folder_path + "\\ret.bin",ret_depths);
