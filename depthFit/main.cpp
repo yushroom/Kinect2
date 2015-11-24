@@ -7,36 +7,17 @@
 #include "auxiliar.h"
 #include "fit_gaussian.h"
 
-struct Parameters_T{
-	int width, height,frames;
-	std::string v1_source_path;
-	std::string v2_source_path;
-	std::string output_folder_path;
 
-};
-
-
-Parameters_T *get_arguments(int argc, char **argv) {
-	if (argc != 7) {
-		printf("usage: depthFit.exe $v1_sources_path &v2_sources_path $output_folder_path $width $height frames\n");
-		exit(-1);
-	}
-	Parameters_T *params = new Parameters_T();
-	params->v1_source_path = std::string(argv[1]);
-	params->v2_source_path = std::string(argv[2]);
-	params->output_folder_path = std::string(argv[3]);
-	params->width = atoi(argv[4]);
-	params->height = atoi(argv[5]);
-	params->frames = atoi(argv[6]);
-	return params;
-}
 
 
 
 int main(int argc,char **argv){
 	
-	Parameters_T *params = get_arguments(argc,argv);
+	printf("%d\n",sizeof(TCHAR));
+	Parameters_T *params = readIniFile("../depthFit.ini");
 	
+
+
 	std::vector<std::vector<DEPTH_TYPE>>v1_depths;
 	std::vector<std::vector<DEPTH_TYPE>>v2_depths;
 	std::vector<std::vector<DEPTH_TYPE>>ret_depths;
