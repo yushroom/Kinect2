@@ -3,16 +3,12 @@
 #include <cassert>
 #include <math.h>
 #include <iostream>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <algorithm>
 
-using namespace cv;
+#include <dump_utils.h>
+#include <gaussian_utils.h>
 
 typedef std::vector<DEPTH_TYPE> DEPTH_IMAGE;
-struct gaussian_pair{
-	double mu, sigma;
-};
 typedef std::vector<gaussian_pair> GAUSSIAN_IMAGE;
 
 #ifndef VALID_DEPTH_TEST
@@ -100,47 +96,12 @@ inline void fit_gaussian_helper(
 					double exponential = -(dist_coor_sqr / (2 * sigma_i*sigma_i) + dist_value_sqr / (2 * sigma_v*sigma_v));
 					double local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) ? exp(exponential) : 0.0;
 					sum_weight += local_weight;
-					//if (i == 3 && j == 490) {
-					//	printf("%g %g %g %g\n", local_area_value[x][y], local_weight, p.mu, p.sigma);
-					//}
 					p.sigma += local_weight*(local_area_value[x][y] - p.mu)*(local_area_value[x][y] - p.mu);
 					}
 				p.sigma = sqrt(p.sigma / sum_weight); 
 				if (nvalid < gaussian_width*gaussian_width / 2 || p.sigma == 0.0) mask[idx] = false;
-				//if (p.sigma == 0.0 && false)	{
-				//	printf("%d %d %g\n", i, j, sum_weight);
-				//	for (int x = 0; x < local_area_value.size(); ++x)
-				//		for (int y = 0; y < local_area_value[0].size(); ++y)
-				//			printf("%g%c", local_area_value[x][y], y == local_area_value[0].size() - 1 ? '\n' : ' ');
-				//	getchar();
-
-				//}
 			}
 		}
-}
-
-void write_normalized_vector(const std::vector<DEPTH_TYPE> &img, const std::string& filename, int w, int h)
-{
-	//auto vmax = *std::max_element(img.begin(), img.end());
-	//auto vmin = *std::min_element(img.begin(), img.end());
-	float vmax = -1, vmin = DEPTH_INVALID;
-	for (int i = 1; i < w * h; ++i) {
-		if (img[i] != 0 && img[i] < vmin) vmin = img[i];
-		if (VALID_DEPTH_TEST(img[i]) && img[i] > vmax) vmax = img[i];
-	}
-
-	//std::cout << "[write_normalized_vector] max = " << vmax << "  min = " << vmin << std::endl;
-
-	Mat output = Mat::zeros(h, w, CV_8U);
-	for (int y = 0; y < h; y++)
-		for (int x = 0; x < w; x++)
-		{
-		int idx = x + y * w;
-		float v = float(img[idx] - vmin) / float(vmax - vmin);
-		output.at<unsigned char>(y, x) = unsigned char(v * 255);
-		}
-
-	imwrite(filename, output);
 }
 
 inline void seperate_gaussian(const GAUSSIAN_IMAGE& image, std::vector<float> &mu, std::vector<float> &sigma) {
@@ -167,8 +128,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 	const double sigma_v,
 	const double beta_v1,
 	const double beta_v2,
-	const int niter,
-	const char* pre)
+	const int niter)
 {
 /*
 	auto x = test_gaussian_sigma(1, 5);
@@ -182,6 +142,8 @@ std::vector<DEPTH_TYPE> fit_depth(
 	DEPTH_IMAGE bias, last;
 	std::vector<bool> maskd, maskb;
 	GAUSSIAN_IMAGE gd, gb;
+	const char pre[] = "D:\\cvpr\\desk\\fit_gaussian\\one_frame";
+#define DEBUG_DIFF
 #ifdef DEBUG_DIFF
 	FILE *rfp = nullptr;
 	if (pre) {
@@ -228,19 +190,19 @@ std::vector<DEPTH_TYPE> fit_depth(
 			sprintf_s(mub_path, "%s//%d-mub.bmp", pre, it);
 			sprintf_s(sigmab_path, "%s//%d-sigmab.bmp", pre, it);
 
-			write_normalized_vector(result, std::string(d_path), depth_width, depth_height);
+			dump_normalized_image(result, d_path, depth_width, depth_height);
 			printf_s("max: %g\n", *std::max_element(result.begin(), result.end()));
-			write_normalized_vector(bias, std::string(b_path), depth_width, depth_height);
+			dump_normalized_image(bias, b_path, depth_width, depth_height);
 
 			std::vector<float> mud, sigmad, mub, sigmab;
 			seperate_gaussian(gd, mud, sigmad);
 			seperate_gaussian(gb, mub, sigmab);
 
-			write_normalized_vector(mud, std::string(mud_path), depth_width, depth_height);
-			write_normalized_vector(sigmad, std::string(sigmad_path), depth_width, depth_height);
+			dump_normalized_image(mud, mud_path, depth_width, depth_height);
+			dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
 
-			write_normalized_vector(mub, std::string(mub_path), depth_width, depth_height);
-			write_normalized_vector(sigmab, std::string(sigmab_path), depth_width, depth_height);
+			dump_normalized_image(mub, mub_path, depth_width, depth_height);
+			dump_normalized_image(sigmab, sigmab_path, depth_width, depth_height);
 		}
 #endif
 		const int half_gaussian_width = (gaussian_width - 1) / 2;

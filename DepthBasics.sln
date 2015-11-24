@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DepthBasics", "DepthBasics-D2D.vcxproj", "{4556CB68-B48D-4C18-B29D-032B06DC7E8C}"
 EndProject
@@ -22,6 +22,11 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Depth2Ply", "Depth2Ply\Depth2Ply.vcxproj", "{4F131194-730A-4CEC-AEC4-DB38D1782A96}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "depthFit", "depthFit\depthFit.vcxproj", "{21C720BF-4C87-44D0-95BA-C336245E0D85}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F} = {CCD86E3E-32AC-455C-AACD-EADC984B295F}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "depthFitLib", "depthFitLib\depthFitLib.vcxproj", "{CCD86E3E-32AC-455C-AACD-EADC984B295F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -153,6 +158,18 @@ Global
 		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|Win32.Build.0 = Release|Win32
 		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|x64.ActiveCfg = Release|x64
 		{21C720BF-4C87-44D0-95BA-C336245E0D85}.Release|x64.Build.0 = Release|x64
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Debug|Win32.Build.0 = Debug|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Debug|x64.ActiveCfg = Debug|x64
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Debug|x64.Build.0 = Debug|x64
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Release|Win32.ActiveCfg = Release|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Release|Win32.Build.0 = Release|Win32
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Release|x64.ActiveCfg = Release|x64
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
