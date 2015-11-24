@@ -6,7 +6,14 @@
 #include <algorithm>
 
 #include <dump_utils.h>
-#include <gaussian_utils.h>
+#include <gaussian_utils.h>	  
+#include <geo_utils.h>
+
+
+#define V2_RESIZED_FX (415.035)
+#define V2_RESIZED_FY (413.996)
+#define V2_RESIZED_CX (325.237)
+#define V2_RESIZED_CY (234.963)
 
 typedef std::vector<DEPTH_TYPE> DEPTH_IMAGE;
 typedef std::vector<gaussian_pair> GAUSSIAN_IMAGE;
@@ -143,7 +150,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 	std::vector<bool> maskd, maskb;
 	GAUSSIAN_IMAGE gd, gb;
 	const char pre[] = "D:\\cvpr\\desk\\fit_gaussian\\one_frame";
-#define DEBUG_DIFF
+//#define DEBUG_DIFF
 #ifdef DEBUG_DIFF
 	FILE *rfp = nullptr;
 	if (pre) {
@@ -181,6 +188,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 			char d_path[_MAX_PATH], b_path[_MAX_PATH];
 			char mud_path[_MAX_PATH], mub_path[_MAX_PATH];
 			char sigmad_path[_MAX_PATH], sigmab_path[_MAX_PATH];
+			char result_ply[_MAX_PATH];
 			sprintf_s(d_path, "%s//%d-d.bmp", pre, it);
 			sprintf_s(b_path, "%s//%d-b.bmp", pre, it);
 
@@ -190,19 +198,26 @@ std::vector<DEPTH_TYPE> fit_depth(
 			sprintf_s(mub_path, "%s//%d-mub.bmp", pre, it);
 			sprintf_s(sigmab_path, "%s//%d-sigmab.bmp", pre, it);
 
-			dump_normalized_image(result, d_path, depth_width, depth_height);
+			sprintf_s(result_ply, "%s//%d.ply", pre, it);
+			{
+				auto x = calc_points_from_depth_image(result, depth_width, depth_height,
+					V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+				dump_point_cloud(x, result_ply);
+			}
+
+			dump_normalized_image(result, d_path, depth_width, depth_height, 1000.f, 1200.f);
 			printf_s("max: %g\n", *std::max_element(result.begin(), result.end()));
-			dump_normalized_image(bias, b_path, depth_width, depth_height);
+			//dump_normalized_image(bias, b_path, depth_width, depth_height);
 
 			std::vector<float> mud, sigmad, mub, sigmab;
 			seperate_gaussian(gd, mud, sigmad);
 			seperate_gaussian(gb, mub, sigmab);
 
-			dump_normalized_image(mud, mud_path, depth_width, depth_height);
-			dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
+			//dump_normalized_image(mud, mud_path, depth_width, depth_height);
+			//dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
 
-			dump_normalized_image(mub, mub_path, depth_width, depth_height);
-			dump_normalized_image(sigmab, sigmab_path, depth_width, depth_height);
+			//dump_normalized_image(mub, mub_path, depth_width, depth_height);
+			//dump_normalized_image(sigmab, sigmab_path, depth_width, depth_height);
 		}
 #endif
 		const int half_gaussian_width = (gaussian_width - 1) / 2;
