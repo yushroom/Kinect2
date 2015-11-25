@@ -16,6 +16,12 @@ void	dump_point_cloud(
 	const char*						path, 
 	const vector3b					rgb = vector3b(255, 255, 255));
 
+void    dump_image(
+    const std::vector<vector3b>&    image,
+    const char*                     path,
+    const int                       width,
+    const int                       height);
+
 template <typename T>
 void dump_normalized_image(
 	const std::vector<T>&			image,
@@ -50,7 +56,7 @@ void dump_normalized_image(
 		for (int j = 0; j < width; ++j) {
 		int idx = j + i*width;
 		T value = clamp(image[idx], lower_bound, upper_bound);
-		value = (value - lower_bound) / range;
+		value = range==0?1.f:((value - lower_bound) / range);
 		BYTE rgb = static_cast<BYTE>(value * 255);
 		cimage.SetPixelRGB(j, i, rgb, rgb, rgb);
 		}

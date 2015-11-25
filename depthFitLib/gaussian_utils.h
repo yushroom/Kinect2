@@ -1,7 +1,7 @@
 #pragma once
 
 struct gaussian_pair{
-	double mu, sigma;
+	float mu, sigma;
 	gaussian_pair(){}
-	gaussian_pair(double Mu, double Sigma) :mu(Mu), sigma(Sigma){}
+	gaussian_pair(float Mu, float Sigma) :mu(Mu), sigma(Sigma){}
 };

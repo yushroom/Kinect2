@@ -33,3 +33,19 @@ void	dump_point_cloud(
 	fclose(fp);
 
 }
+
+void    dump_image(
+    const std::vector<vector3b>&    image,
+    const char*                     path,
+    const int                       width,
+    const int                       height)
+{
+    CImage cimage;
+	cimage.Create(width, height, 32);
+	for (int i = 0; i < height; ++i)
+		for (int j = 0; j < width; ++j) {
+		int idx = j + i*width;
+		cimage.SetPixelRGB(j, i, image[idx].x, image[idx].y, image[idx].z);
+		}
+	cimage.Save(path);
+}
