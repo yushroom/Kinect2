@@ -960,8 +960,52 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 //#define TEST_OUPUT_BIN_PATH_v2tov1 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-aa.bin"
 //#define TEST_OUPUT_BIN_PATH_v1tov2 "D:\\yyk\\capture\\test\\" TEST_NUMBER_ID "-bb.bin"
 #define PATH_FILE "D:\\yyk\\capture\\desk\\path.txt"
- 
-int main(int argc, char* argv[])
+
+int main()
+{
+	const string depth1_path = "D:\\synthetic_depth_v1.bin";
+	const string depth2_path = "D:\\synthetic_depth_v2.bin";
+	// read depth file
+	vector<UINT16>	depth_pixels[2];
+	depth_pixels[0].resize(WIDTH*HEIGHT);
+	depth_pixels[1].resize(WIDTH * WIDTH);
+	{
+		FILE *depth_in;
+		cout << depth1_path << endl;
+		fopen_s(&depth_in, depth1_path.c_str(), "rb");
+		fread(&depth_pixels[0][0], sizeof(UINT16), depth_pixels[0].size(), depth_in);
+		fclose(depth_in);
+		cout << depth2_path << endl;
+		fopen_s(&depth_in, depth2_path.c_str(), "rb");
+		fread(&depth_pixels[1][0], sizeof(UINT16), depth_pixels[1].size(), depth_in);
+		fclose(depth_in);
+	}
+	vector<float> depth, bias;
+	float smooth = 0.350f;
+	vector<float> depth1_to_2(WIDTH * HEIGHT, DEPTH_INVALID);
+	vector<float> depth2(WIDTH * HEIGHT, DEPTH_INVALID);
+	for (int i = 0; i < depth1_to_2.size(); ++i) {
+		depth1_to_2[i] = float(depth_pixels[0][i]);
+		depth2[i]      = float(depth_pixels[1][i]);
+	}
+	const vector<float> depth_und;
+	prepare_for_solving_bias(depth, depth1_to_2, depth2);
+
+	solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
+
+	vector<float> depth2_without_bias = depth2;
+	adjust_for_bias(depth2_without_bias, bias);
+
+	//Mat points_2_without_bias = calc_points(depth2_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+
+	const string bin_prefix = "D:\\result_for_synthetic_depth";
+	//ResizeAndSaveToBin(depth1_to_2, bin_prefix + "-1to2.bin");
+	//ResizeAndSaveToBin(depth2_without_bias, bin_prefix + );
+	write_normalized_vector(bias, bin_prefix + "-bias-of-v2.bmp");
+	write_normalized_vector(depth2_without_bias, bin_prefix + "-result-1to2.bmp");
+}
+
+int old_main(int argc, char* argv[])
 {
 	{
 		const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
