@@ -162,8 +162,8 @@ public:
 		: KinectNoiseModel(depth_bin_path, IR_image_path) {
 		width = 640;
 		height = 480;
-		m_threshold = 0.6f;
-		m_scale = 2.0f;
+		m_threshold = 0.7f;
+		m_scale = 3.0f;
 	}
 
 	//virtual bool process() override {
@@ -193,7 +193,7 @@ public:
 		: KinectNoiseModel(depth_bin_path, IR_image_path) {
 		width = 512;
 		height = 424;
-		m_threshold = 0.3f;
+		m_threshold = 0.2f;
 		m_scale = 5.f;
 	}
 

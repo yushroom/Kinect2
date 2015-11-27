@@ -62,12 +62,13 @@ void process(string depth_bin_path, string IR_path, KinectType type)
 	cout << endl;
 }
 
-void process_and_write_data()
+void process_and_write_data(bool write_a, bool write_b)
 {
 
 #if 1
+	if (write_a)
 	{
-		ofstream fout("D://noise_model_V1_1119_a_all.csv");
+		ofstream fout("D://noise_model_V1_1124_1_a.csv");
 		fout << "distance, angle, lateral noise, axial noise\n";
 		for (auto& n : noise_model_data_v1) {
 			//fout << n.distance << ", " << n.angle << ", " 
@@ -76,8 +77,9 @@ void process_and_write_data()
 		}
 		fout.close();
 	}
+	if (write_b)
 	{
-		ofstream fout("D://noise_model_V2_1119_b_all.csv");
+		ofstream fout("D://noise_model_V2_1124_1_b.csv");
 		fout << "distance, angle, lateral noise, axial noise\n";
 		for (auto& n : noise_model_data_v2) {
 			//fout << n.distance << ", " << n.angle << ", " 
@@ -118,7 +120,7 @@ int main()
 {
 	log_system_init();
 
-	string root_dir = "D:\\yyk\\image\\NoiseModel_1119\\";
+	string root_dir = "D:\\yyk\\image\\NoiseModel_1124_1\\";
 	ifstream fin(root_dir+"path.txt");
 	string str;
 	vector<string> image_path_list;
@@ -131,19 +133,25 @@ int main()
 	cout << "image path list: " << image_path_list.size() << endl;
 
 	bool save_temp_file = true;
+	bool process_a = false;
+	bool process_b = true;
 
 	for (int i = 0; i < image_path_list.size() / 4; ++i) {
 		const string& IR1_path		= image_path_list[i * 4];
 		const string& depth1_path	= image_path_list[i * 4 + 1];
 		const string& IR2_path		= image_path_list[i * 4 + 2];
 		const string& depth2_path	= image_path_list[i * 4 + 3];
-		process(depth1_path, IR1_path, KinectV1);
-		//waitKey();
-		process(depth2_path, IR2_path, KinectV2);
-		//waitKey();
+		if (process_a) {
+			process(depth1_path, IR1_path, KinectV1);
+			//waitKey();
+		}
+		if (process_b) {
+			process(depth2_path, IR2_path, KinectV2);
+			waitKey();
+		}
 	}
 
-	process_and_write_data();
+	process_and_write_data(process_a, process_b);
 
 	return 0;
 }

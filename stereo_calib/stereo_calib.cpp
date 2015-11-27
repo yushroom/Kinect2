@@ -83,11 +83,14 @@ double distCoeffRGB_cropped[] = { 0.079720648168906463, -0.015686540595863777, 0
 #define M_PI       3.14159265358979323846
 const double fovyLeft = 45.f / 180.f * M_PI;
 // double cameraLeft[] = { 512.f/424 / 2.f / atanf(fovyLeft / 2.f), 424 / 2.f / atanf(fovyLeft / 2.f), 512 / 2.f, 424 / 2.f };
-double camera_v1[] = { 586.881, 585.482, 321.222, 232.1 };
-double distCoeffLeft_v1[] = { 0.144880, 0.440790, 0.004036, -0.002119 };
-double camera_v2[] = { 413.864, 412.790, 325.169, 234.573 };
-double distCoeffLeft_v2[] = { 0.083012, -0.223039, 0.002381, 0.003085 };
-
+//double camera_v1[] = { 586.881, 585.482, 321.222, 232.1 };
+//double distCoeffLeft_v1[] = { 0.144880, 0.440790, 0.004036, -0.002119 };
+//double camera_v2[] = { 413.864, 412.790, 325.169, 234.573 };
+//double distCoeffLeft_v2[] = { 0.083012, -0.223039, 0.002381, 0.003085 };
+double camera_v1[] = { 587.088, 585.688, 321.198, 232.202 };
+double distCoeffLeft_v1[] = { -0.144975, 0.437632, 0.004077, -0.002167 };
+double camera_v2[] = { 415.035, 413.996, 325.237, 234.963 };
+double distCoeffLeft_v2[] = { 0.082914, -0.224419, 0.002441, 0.002930 };
 
 static void load_intrinsic_matrix(Mat &cameraMatrix, Mat& distCoeffs, string file_path)
 {
@@ -474,7 +477,7 @@ int main(int argc, char** argv)
 
 	if (imagelistfn == "")
 	{
-		imagelistfn = "../data/stereo_calib.xml";
+		imagelistfn = "D:/yyk/stereo_calib_IR1_and_IR2.xml";
 		boardSize = Size(9, 6);
 	}
 	else if (boardSize.width <= 0 || boardSize.height <= 0)

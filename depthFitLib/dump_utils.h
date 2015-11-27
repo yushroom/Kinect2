@@ -4,7 +4,8 @@
 #include <codex_basic.h>
 #include <codex_math.h>
 #include <vector>	
-
+#include <fstream>
+#include <algorithm>
 #include <atlimage.h>
 
 typedef codex::math::vector::vector3<float>				vector3f;
@@ -56,10 +57,16 @@ void dump_normalized_image(
 		for (int j = 0; j < width; ++j) {
 		int idx = j + i*width;
 		T value = clamp(image[idx], lower_bound, upper_bound);
-		value = range==0?1.f:((value - lower_bound) / range);
-		BYTE rgb = static_cast<BYTE>(value * 255);
+		value = range==0?255:((value - lower_bound)*255 / range);
+		BYTE rgb = static_cast<BYTE>(value);
 		cimage.SetPixelRGB(j, i, rgb, rgb, rgb);
 		}
 	cimage.Save(path);
 }
 
+template<typename T>
+void dump_raw_vector(const std::vector<T>& vec, const std::string& file_path){
+	std::ofstream os(file_path, std::ios::binary);
+	os.write((char*)&vec[0], vec.size() * sizeof(T));
+	os.close();
+}

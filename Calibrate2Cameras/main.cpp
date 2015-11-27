@@ -87,10 +87,10 @@ const double fovyLeft = 45.f / 180.f * M_PI;
 //double distCoeffLeft_v1[] = { 0.144880, 0.440790, 0.004036, -0.002119 };
 //double camera_v2[] = { 413.864, 412.790, 325.169, 234.573 };
 //double distCoeffLeft_v2[] = { 0.083012, -0.223039, 0.002381, 0.003085 };
-double camera_v1[] = { 587.066, 585.784, 257.843, 204.720 };
-double distCoeffLeft_v1[] = { -0.152820, 0.493023, 0.004213, -0.001930 };
-double camera_v2[] = { 364.440, 363.688, 259.818, 207.523 };
-double distCoeffLeft_v2[] = { 0.082583, -0.221877, 0.002659, 0.002765 };
+double camera_v1[] = { 587.088, 585.688, 321.198, 232.202 };
+double distCoeffLeft_v1[] = { -0.144975, 0.437632, 0.004077, -0.002167 };
+double camera_v2[] = { 415.035, 413.996, 325.237, 234.963 };
+double distCoeffLeft_v2[] = { 0.082914, -0.224419, 0.002441, 0.002930 };
 static void
 StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated = true, bool showRectified = true)
 {
@@ -262,7 +262,7 @@ StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated 
 	cout << "average reprojection err = " << err / npoints << endl;
 
 	// save intrinsic parameters
-	FileStorage fs("intrinsics.yml", CV_STORAGE_WRITE);
+	FileStorage fs("D:\\yyk\\intrinsics_IR1IR2_1122__.yml", CV_STORAGE_WRITE);
 	if (fs.isOpened())
 	{
 		fs << "M1" << cameraMatrix[0] << "D1" << distCoeffs[0] <<
@@ -280,7 +280,7 @@ StereoCalib(const vector<string>& imagelist, Size boardSize, bool useCalibrated 
 		imageSize, R, T, R1, R2, P1, P2, Q,
 		CALIB_ZERO_DISPARITY, 1, imageSize, &validRoi[0], &validRoi[1]);
 
-	fs.open("extrinsics.yml", CV_STORAGE_WRITE);
+	fs.open("D:\\yyk\\extrinsics_IR1IR2_1122.yml", CV_STORAGE_WRITE);
 	if (fs.isOpened())
 	{
 		fs << "R" << R << "T" << T << "R1" << R1 << "R2" << R2 << "P1" << P1 << "P2" << P2 << "Q" << Q;
@@ -440,7 +440,7 @@ int main(int argc, char** argv)
 
 	if (imagelistfn == "")
 	{
-		imagelistfn = "D:\\yyk\\stereo_calib_all.xml";
+		imagelistfn = "D:\\yyk\\stereo_calib_IR1_IR2.xml";
 		boardSize = Size(11, 10);
 	}
 	else if (boardSize.width <= 0 || boardSize.height <= 0)

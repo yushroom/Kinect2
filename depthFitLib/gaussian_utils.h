@@ -13,7 +13,7 @@ generate a depthmap where depth[x, y] = base + gaussian(sigma) + x*bias
 */
 template <typename T>
 void inline gen_gaussian_image(
-    std::vector<T>      result,
+    std::vector<T>&     result,
     const T             base,
     const float         bias,
 	const float			sigma,
@@ -28,6 +28,6 @@ void inline gen_gaussian_image(
         int x = i%width;
         result[i] = base + sigma*a + x*bias;
         if (i+1 < width*height)
-            result[i+1] = static_cast<T>(base + sigma*b + x*bias);
+            result[i+1] = static_cast<T>(base + sigma*b + (i+1)%width*bias);
     }
 }

@@ -9,7 +9,7 @@
 #include <fstream>
 #include <algorithm>
 #include <advmath.h>
-#include "fit_gaussian.h"
+//#include "fit_gaussian.h"
 
 using namespace cv;
 using namespace std;
@@ -58,8 +58,8 @@ static const bool write_file = false;
 //#define POINT_CLOUD_2		PREFIX_B "-points.ply"
 //#define POINT_CLOUD_DIFF	PREFIX_A "-points-diff.ply"
 
-#define EXTRINSICS_FILE_PATH "D:\\yyk\\image\\extrinsics.yml"
-#define INTRINSICS_FILE_PATH "D:\\yyk\\image\\intrinsics.yml"
+#define EXTRINSICS_FILE_PATH "D:\\yyk\\extrinsics_IR1IR2_1122.yml"
+#define INTRINSICS_FILE_PATH "D:\\yyk\\intrinsics_IR1IR2_1122.yml"
 #define TABLE1 "D:\\yyk\\image\\table1_zfx.txt"
 #define TABLE2 "D:\\yyk\\image\\table2_zfx.txt"
 
@@ -768,17 +768,7 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 
 	vector<float> depth, bias;
 	float smooth = 0.350f;
-	prepare_for_solving_bias(depth, depth1_to_2, depth_und);
-
-	vector<float> depth_f;
-	if (proj_type == v1_to_v2) {
-		depth_f = fit_depth(depth_und, depth1_to_2, WIDTH, HEIGHT, 5, 1, 1, 1, 1, 1, 0);
-		write_normalized_vector(depth_f, "d:\\fit_depth-1to2.bmp");
-	} else {
-		depth_f = fit_depth(depth1_to_2, depth_und, WIDTH, HEIGHT, 5, 1, 1, 1, 1, 1, 0);
-		write_normalized_vector(depth_f, "d:\\fit_depth_2to1.bmp");
-	}
-	
+	prepare_for_solving_bias(depth, depth1_to_2, depth_und);	
 
 	solve_for_bias(WIDTH, HEIGHT, depth, smooth, 0, 500, bias);
 
@@ -795,22 +785,23 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 		write_normalized_image(img, path.c_str());
 	}
 
-
 	vector<float> depth1_without_bias = depth_und;
 	adjust_for_bias(depth1_without_bias, bias);
 
-	//Mat points_2_without_bias = calc_points(depth1_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+	Mat points_2_without_bias = calc_points(depth1_without_bias, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 
 	if (proj_type == v1_to_v2) {
 		//cout << endl << endl << bin_prefix << endl << endl;
 		//waitKey();
 		ResizeAndSaveToBin(depth1_to_2, bin_prefix + "-1to2.bin");
 		ResizeAndSaveToBin(depth1_without_bias, bin_path);
+		write_normalized_vector(depth1_without_bias, bin_prefix + "-result-1to2.bmp");
 	} else {
 		//cout << endl << endl << bin_prefix << endl << endl;
 		//waitKey();
 		SaveToBin(depth1_to_2, bin_prefix + "-2to1.bin");
 		SaveToBin(depth1_without_bias, bin_path);
+		write_normalized_vector(depth1_without_bias, bin_prefix + "-result-2to1.bmp");
 	}
 	
 
@@ -839,23 +830,10 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 vector<pair<float, float>>	undistortLookupTable[2];
 Mat R, T, E, F;
 
+
+
 void process(const string& ir1_path, const string& ir2_path, const string& depth1_path, const string& depth2_path, const string& prefix, const string& bin_path_v1tov2, const string& bin_path_v2tov1, bool save_temp_file)
 {
-	//Mat R, T, E, F;
-	//{
-	//	const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
-	//	FileStorage fs;
-	//	fs.open(extrinsic_filename, CV_STORAGE_READ);
-	//	if (!fs.isOpened())
-	//	{
-	//		printf("Failed to open file %s\n", extrinsic_filename);
-	//	}
-	//	fs["R"] >> R;
-	//	fs["T"] >> T;
-	//}
-
-	//Mat img_IR_und[2];
-	//Mat img_depth_und[2];
 	vector<unsigned char> IR_und[2];
 	vector<float> depth_und[2];
 	{
@@ -875,6 +853,22 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 			fclose(depth_in);
 		}
 
+		{
+#define SHIFT_X 5
+#define SHIFT_Y 4
+			vector<UINT16>shift_depth(HEIGHT * WIDTH,0);
+			for(int y = 0;y < HEIGHT;y++) {
+				for(int x = 0;x < WIDTH;x++) {
+					int new_x = x + SHIFT_X;
+					int new_y = y + SHIFT_Y;
+					if(new_x >= 0 && new_x < WIDTH && new_y >= 0 && new_y < HEIGHT) {
+						shift_depth[new_x + new_y * WIDTH] = depth_pixels[0][x + y * WIDTH]; 
+					}
+				}
+			}
+			depth_pixels[0] = shift_depth;
+		}
+		
 		Mat img_IR[2];
 		Mat img_depth[2];
 		vector<unsigned char> IR[2];
@@ -894,7 +888,7 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 			depth_pixels[1] = resize_image(depth_pixels[1]);
 		}
 
-		std::cout << ir1_path << '\n' << ir2_path << '\n';
+		std::cout << ir1_path << '\n' << ir2_path << '\n'; 
 		img_IR[0] = imread(ir1_path, 0);
 		{
 			Mat mat = imread(ir2_path, 0);
@@ -908,10 +902,6 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 			IR_und[i].resize(WIDTH * HEIGHT);
 			depth_und[i].resize(WIDTH * HEIGHT);
 		}
-
-		//vector<pair<float, float>>	undistortLookupTable[2];
-		//ReadCalibratedUndistortionTable(undistortLookupTable[0], WIDTH, HEIGHT, TABLE1);
-		//ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
 
 		Mat table_x(HEIGHT, WIDTH, CV_8U);
 		Mat table_y(HEIGHT, WIDTH, CV_8U);
@@ -941,8 +931,10 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 		}
 	}
 
-	SaveToBin(depth_und[0], prefix + "-a-depth-und.bin");
-	SaveToBin(depth_und[1], prefix + "-b-depth-und.bin");
+	//SaveToBin(depth_und[0], prefix + "-a-depth-und.bin");
+	//SaveToBin(depth_und[1], prefix + "-b-depth-und.bin");
+	//ResizeAndSaveToBin(depth_und[0], prefix + "-a-depth-und-512.bin");
+	//ResizeAndSaveToBin(depth_und[1], prefix + "-b-depth-und-512.bin");
 
 	if (save_temp_file) {
 		imwrite(prefix + "-a-IR-und.bmp", vector_to_img_uc(IR_und[0], WIDTH, HEIGHT));
@@ -950,15 +942,15 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 		write_normalized_vector(depth_und[0], prefix + "-a-depth-und.bmp");
 		write_normalized_vector(depth_und[1], prefix + "-b-depth-und.bmp");
 	}
-	write_normalized_vector(depth_und[0], prefix + "-a-depth-und.bmp");
-	write_normalized_vector(depth_und[1], prefix + "-b-depth-und.bmp");
+	//write_normalized_vector(depth_und[0], prefix + "-a-depth-und.bmp");
+	//write_normalized_vector(depth_und[1], prefix + "-b-depth-und.bmp");
 
 	Mat points_1 = calc_points(depth_und[0], V1_FX, V1_FY, V1_CX, V1_CY);
 	Mat points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
 
-
 	// 1 -> 2
 	project_to_another_camera(R, T, points_1, IR_und[0], depth_und[1], prefix, bin_path_v1tov2, v1_to_v2, save_temp_file);
+	// 2->1
 	project_to_another_camera(R, T, points_2, IR_und[1], depth_und[0], prefix, bin_path_v2tov1, v2_to_v1, save_temp_file);
 }
 
@@ -1002,7 +994,7 @@ int main(int argc, char* argv[])
 		}
 		cout << "image path list: " << image_path_list.size() << endl;
 
-		bool save_temp_file = false;
+		bool save_temp_file = true;
 
 		//int count = 100;
 
@@ -1012,8 +1004,8 @@ int main(int argc, char* argv[])
 			const string& IR2_path		= image_path_list[i * 4 + 2];
 			const string& depth2_path	= image_path_list[i * 4 + 3];
 			string prefix = IR1_path.substr(0, IR1_path.find("-a.bmp"));
-			string bin_path_v1tov2 = prefix + "-bb-1119.bin";
-			string bin_path_v2tov1 = prefix + "-aa-1119.bin";
+			string bin_path_v1tov2 = prefix + "-bb-1126.bin";
+			string bin_path_v2tov1 = prefix + "-aa-1126.bin";
 			bin_prefix = prefix;
 			process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);	
 
@@ -1023,39 +1015,5 @@ int main(int argc, char* argv[])
 	}
 
 
-	return 0;
-}
-
-int old_main(int argc, char* argv[])
-{
-	string root_dir = TEST_ROOT_DIR;
-	string number_id = TEST_NUMBER_ID;
-	string save_temp_file_dir = TEST_SAVE_TEMP_FILE_DIR;
-	//string bin_path_v2tov1 = TEST_OUPUT_BIN_PATH_v2tov1;
-	//string bin_path_v1tov2 = TEST_OUPUT_BIN_PATH_v1tov2;
-	bool save_temp_file = false;
-
-	if (argc >= 3) {
-		root_dir = argv[1];
-		number_id = string(argv[2]);
-		//bin_path_1 = string(argv[3]);
-	}
-	if (argc >= 4) {
-		save_temp_file = true;
-		save_temp_file_dir = string(argv[3]);
-	}
-
-	std::cout << number_id << ' ' << save_temp_file_dir << endl;
-	string prefix = root_dir + number_id;
-	string IR1_path = prefix + "-a.bmp";
-	string IR2_path = prefix + "-b.bmp";
-	string depth1_path = prefix + "-a.bin";
-	string depth2_path = prefix + "-b.bin";
-	string bin_path_v2tov1 = prefix + "-aa.bin";
-	string bin_path_v1tov2 = prefix + "-bb.bin";
-	prefix = save_temp_file_dir+number_id;
-	bin_prefix = root_dir + number_id;
-
-	process(IR1_path, IR2_path, depth1_path, depth2_path, prefix, bin_path_v1tov2, bin_path_v2tov1, save_temp_file);
 	return 0;
 }

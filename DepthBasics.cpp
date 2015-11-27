@@ -718,13 +718,14 @@ void CDepthBasics::SaveInfraredImage()
 #else
 	stringstream ss;
 	//ss << IMAGE_PATH_PREFIX_A << "test_data\\" << now << '-' << m_nScreenShotCount;
-	ss << "D:\\yyk\\image\\NoiseModel_1119_5\\" << now << '-' << m_nScreenShotCount;
+	ss << "D:\\yyk\\image\\NoiseModel_1124_1\\" << now << '-' << m_nScreenShotCount;
 	//CreatDir(ss.str().c_str());
 	//std::string ir_path_1 = ss.str() + "\\a.bmp";
 	string ir_path_2		= ss.str() + "-b.bmp";
 	string ir_path_1		= ss.str() + "-a.bmp";
 	//std::string depth_path_1 = ss.str() + "-a-depth.bmp";
 	//std::string depth_path_2 = ss.str() + "-b-depth.bmp";
+
 	string depth_bin_path_1 = ss.str() + "-a.bin";
 	string depth_bin_path_2 = ss.str() + "-b.bin";
 	//string color_path_1		= ss.str() + "-a-color.bmp";
