@@ -6,17 +6,14 @@
 
 #include "auxiliar.h"
 #include "fit_gaussian.h"
+#include <cassert>
 
-
-
-
-
-int main(int argc,char **argv){
-	
+int main(int argc,char **argv)
+{    
+    assert(argc == 3);
 	printf("%d\n",sizeof(TCHAR));
-	Parameters_T *params = readIniFile("../depthFit.ini");
-	
-
+	//Parameters_T *params = readIniFile("../depthFit.ini");
+    Parameters_T *params = readIniFile(argv[1]);
 
 	std::vector<std::vector<DEPTH_TYPE>>v1_depths;
 	std::vector<std::vector<DEPTH_TYPE>>v2_depths;
@@ -27,13 +24,15 @@ int main(int argc,char **argv){
 
 	const int		gaussian_width = 5;
 	const double	sigma_i = 2.0;
-	const double	sigma_v = 1.0;
+	const double	sigma_v = 10.0;
 	const double	simga1 = 4;
-	const double	sigma2 = 15;
+	const double	sigma2 = 1.4;
 	const double	beta1 = 1.0 / simga1 / simga1;
 	const double	beta2 = 1.0 / sigma2 / sigma2;
-	const int		niter = 100;
-	const char		pre[] = "D:\\cvpr\\desk\\fit_gaussian";
+	const int		niter = 10;
+	//const char		pre[] = "D:\\cvpr\\desk\\fit_gaussian";
+    //const char		pre[] = R"(D:\cvpr\synthetic_depth_image\fit_gaussian)";
+    const char* pre = argv[2];
 	
 	ret_depths.resize(params->frames);
 	for (int i = 0; i < params->frames; i++) {
@@ -47,8 +46,8 @@ int main(int argc,char **argv){
 			sigma_v,
 			beta1,
 			beta2,
-			niter
-			//pre
+			niter,
+			pre
 			);
 	}
 	MergeBinFromFile(params->output_folder_path + "\\ret.bin",ret_depths);
