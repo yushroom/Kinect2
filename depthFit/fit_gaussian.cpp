@@ -153,8 +153,8 @@ std::vector<DEPTH_TYPE> fit_depth(
 	const int gaussian_width,
 	const double sigma_i,
 	const double sigma_v,
-	const double beta_v1,
-	const double beta_v2,
+	std::function<float(float)> beta_v1,
+	std::function<float(float)> beta_v2,
 	const int niter,
     const char* pre
     )
@@ -172,28 +172,13 @@ std::vector<DEPTH_TYPE> fit_depth(
 	std::vector<bool> maskd, maskb, mask;
 	GAUSSIAN_IMAGE gd, gb;
     get_mask(depth_frame_v2, mask);
-    //const char pre[] = "D:\\cvpr\\desk\\fit_gaussian\\one_frame_synb";
-    //const char pre[] = "D:\\cvpr\\synthetic_depth_image\\fit_gaussian\\200";
 #define DEBUG_DIFF
-#ifdef DEBUG_DIFF
- //   const int border = 100;
- //   DEPTH_IMAGE ground_truth(depth_width*depth_height);
- //   for (int i=0; i<depth_height; ++i)
- //       for (int j=0; j<depth_width; ++j)
- //           if (i<border || i+border >=depth_height || j<border || j+border >= depth_width)
- //               ground_truth[i*depth_width + depth_height] = 600;
- //           else
- //               ground_truth[i*depth_width + depth_height] = 500;
- //               
+#ifdef DEBUG_DIFF         
     FILE *rfp = nullptr;
- //   float initial_rmse;
 	if (pre) {
 		char path[_MAX_PATH];
 		sprintf_s(path, "%s//diff.txt", pre);
 		fopen_s(&rfp, path, "w");
- //       initial_rmse = rmse(ground_truth, depth_frame_v1);
- //       //fprintf(rfp, "%g\n", initial_rmse);
- //       fflush(rfp);
 	}
 #endif
 	for (int it = 1; it <= niter; ++it) {
@@ -224,7 +209,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 			sigma_v
 			);
 #ifdef DEBUG_DIFF
-        const float lb = 450.f, ub = 600.f;
+        const float lb = 800.f, ub = 1200.f;
 		DEPTH_IMAGE w1_image, w2_image, w3_image;
         DEPTH_IMAGE i2_mub;
         std::vector<vector3b> w_image;
@@ -296,30 +281,33 @@ std::vector<DEPTH_TYPE> fit_depth(
 		}
 #endif
 		const int half_gaussian_width = (gaussian_width - 1) / 2;
+
+#pragma omp parallel for
 		for (int i = 0; i < depth_height; ++i)
 			for (int j = 0; j < depth_width; ++j) {
 			    int idx = j + i*depth_width;
 			    if (i - half_gaussian_width < 0 || i + half_gaussian_width >= depth_height
 				    || j - half_gaussian_width < 0 || j + half_gaussian_width >= depth_width)
 				    continue;
-			    const float beta_d = 1.0 / (gd[idx].sigma*gd[idx].sigma);
-			    if (maskb[idx] && maskd[idx]) { 
-				    float w1 = beta_v1, w2 = beta_d, w3 = beta_v2*beta_d / (beta_v2 + beta_d);
-				    float sum_w = w1 + w2 + w3;
-				    float v1 = depth_frame_v1[idx], v2 = gd[idx].mu, v3 = depth_frame_v2[idx] - gb[idx].mu;
+			        const float beta_d = 1.0 / (gd[idx].sigma*gd[idx].sigma);
+			        if (maskb[idx] && maskd[idx]) {
+                        float b2 = beta_v2(depth_frame_v2[idx]);
+				        float w1 = beta_v1(depth_frame_v1[idx]), w2 = beta_d, w3 = b2*beta_d / (b2 + beta_d);
+				        float sum_w = w1 + w2 + w3;
+				        float v1 = depth_frame_v1[idx], v2 = gd[idx].mu, v3 = depth_frame_v2[idx] - gb[idx].mu;
 #ifdef DEBUG_DIFF
-				    w1_image[idx] = w1/sum_w;
-				    w2_image[idx] = w2/sum_w;
-				    w3_image[idx] = w3/sum_w;
-                    w_image[idx] = vector3b(w1/sum_w*255, w2/sum_w*255, w3/sum_w*255);
-                    i2_mub[idx] = v3;
+				        w1_image[idx] = w1/sum_w;
+				        w2_image[idx] = w2/sum_w;
+				        w3_image[idx] = w3/sum_w;
+                        w_image[idx] = vector3b(w1/sum_w*255, w2/sum_w*255, w3/sum_w*255);
+                        i2_mub[idx] = v3;
 #endif
-                    float result_value = (w1*v1 + w2*v2 + w3*v3) / sum_w;
-                    if (!_isnanf(result_value))
-				        result[idx] = result_value;
-					    //(beta_v1*depth_frame_v1[idx] + beta_d*gd[idx].mu + beta_v2*beta_d / (beta_v2 + beta_d)*(depth_frame_v2[idx] - gb[idx].mu))
-					    /// (beta_v1 + beta_d + beta_v2*beta_d / (beta_v2 + beta_d));
-			    }
+                        float result_value = (w1*v1 + w2*v2 + w3*v3) / sum_w;
+                        if (!_isnanf(result_value))
+				            result[idx] = result_value;
+					        //(beta_v1*depth_frame_v1[idx] + beta_d*gd[idx].mu + beta_v2*beta_d / (beta_v2 + beta_d)*(depth_frame_v2[idx] - gb[idx].mu))
+					        /// (beta_v1 + beta_d + beta_v2*beta_d / (beta_v2 + beta_d));
+			        }
 
 			}
 #ifdef DEBUG_DIFF

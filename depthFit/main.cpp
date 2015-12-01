@@ -27,8 +27,10 @@ int main(int argc,char **argv)
 	const double	sigma_v = 10.0;
 	const double	simga1 = 4;
 	const double	sigma2 = 1.4;
-	const double	beta1 = 1.0 / simga1 / simga1;
-	const double	beta2 = 1.0 / sigma2 / sigma2;
+	//const double	beta1 = 1.0 / simga1 / simga1;
+	//const double	beta2 = 1.0 / sigma2 / sigma2;
+    std::function<float(float)> beta1 = [](float depth_mm) ->float { float sigma = 0.0046f*depth_mm-2.1476f; return 1.0f / sigma / sigma; };
+    std::function<float(float)> beta2 = [](float depth_mm) ->float { float sigma = 0.0006f*depth_mm+1.0001f; return 1.0f / sigma / sigma; }; 
 	const int		niter = 10;
 	//const char		pre[] = "D:\\cvpr\\desk\\fit_gaussian";
     //const char		pre[] = R"(D:\cvpr\synthetic_depth_image\fit_gaussian)";
@@ -50,6 +52,8 @@ int main(int argc,char **argv)
 			pre
 			);
 	}
-	MergeBinFromFile(params->output_folder_path + "\\ret.bin",ret_depths);
+
+
+	MergeBinFromFile(std::string(pre) + "\\ret.bin",ret_depths);
 	return 0;
 }
