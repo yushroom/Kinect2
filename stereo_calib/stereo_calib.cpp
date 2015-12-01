@@ -146,8 +146,10 @@ StereoCalib(const vector<string>& imagelist, Size boardSize, string intrinsic_fi
 			const string& filename = imagelist[i * 2 + k];
 			cout << filename << endl;
 			Mat img = imread(filename, 0);
-			if (img.empty())
+			if (img.empty()) {
+				cout << filename << " not exists!" << endl;
 				break;
+			}
 			if (imageSize == Size())
 				imageSize = img.size();
 			else if (img.size() != imageSize)
