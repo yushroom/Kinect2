@@ -7,6 +7,8 @@
 #include "auxiliar.h"
 #include "fit_gaussian.h"
 #include <cassert>
+#include "dump_utils.h"
+#include "geo_utils.h"
 
 int main(int argc,char **argv)
 {    
@@ -52,8 +54,10 @@ int main(int argc,char **argv)
 			pre
 			);
 	}
-
-
 	MergeBinFromFile(std::string(pre) + "\\ret.bin",ret_depths);
+	auto points = calc_points_from_depth_image(ret_depths[0], params->width, params->height, V1_FX, V1_FY, V1_CX, V1_CY);
+	auto normals = calc_normal_map(points, params->width, params->height, V1_FX, V1_FY, V1_CX, V1_CY);
+	dump_normal_map(normals, params->width, params->height, std::string(pre) + "\\ret-normal.bmp");
+	dump_shading(normals, points, params->width, params->height, std::string(pre) + "\\ret-shading.bmp");
 	return 0;
 }

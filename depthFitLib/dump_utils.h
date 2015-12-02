@@ -70,3 +70,16 @@ void dump_raw_vector(const std::vector<T>& vec, const std::string& file_path){
 	os.write((char*)&vec[0], vec.size() * sizeof(T));
 	os.close();
 }
+
+void dump_normal_map(
+	const std::vector<vector3f>& normal_map, 
+	const int width, 
+	const int height, 
+	const std::string& file_path);
+
+void dump_shading(
+	const std::vector<vector3f>& normal_map, 
+	const std::vector<vector3f>& position, 
+	const int width, 
+	const int height, 
+	const std::string& file_path);

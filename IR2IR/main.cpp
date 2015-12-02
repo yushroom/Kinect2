@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <advmath.h>
 #include "utils.hpp"
+#include "dump_utils.h"
+#include "geo_utils.h"
 //#include "fit_gaussian.h"
 
 using namespace cv;
@@ -668,7 +670,7 @@ void project_to_another_camera(const Mat& R, const Mat& T, const Mat& points_1, 
 
 	depth1_to_2 = average_depth_pixels(depth1_to_2, 640, 480);
 
-	imwrite(bin_prefix + "-diff.bmp", diff_image(depth_und, depth1_to_2, WIDTH, HEIGHT, 50));
+	imwrite(bin_prefix + "-diff.bmp", diff_image(depth_und, depth1_to_2, WIDTH, HEIGHT, 200));
 
 	if (proj_type == v1_to_v2) {
 		//cout << endl << endl << bin_prefix << endl << endl;
@@ -785,6 +787,22 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 			fclose(depth_in);
 		}
 
+		// dump normal map
+	{
+		auto position = calc_points_from_depth_image(depth_pixels[0], WIDTH, HEIGHT, V1_FX, V1_FY, V1_CX, V1_CY);
+		auto normal_map = calc_normal_map(position, WIDTH, HEIGHT, V1_FX, V1_FY, V1_CX, V1_CY);
+		dump_normal_map(normal_map, WIDTH, HEIGHT, prefix + "-V1-normal.bmp");
+		dump_shading(normal_map, position, WIDTH, HEIGHT, prefix + "-V1-shading.bmp");
+	}
+	{
+		int w = 512, h = 424;
+		auto position = calc_points_from_depth_image(depth_pixels[1], 512, 424, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+		auto normal_map = calc_normal_map(position, 512, 424, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+		dump_normal_map(normal_map, 512, 424, prefix + "-V2-normal.bmp");
+		dump_shading(normal_map, position, 512, 424, prefix + "-V2-shading.bmp");
+	}
+
+
 #if 1
 		{
 #define SHIFT_X 5
@@ -878,19 +896,7 @@ void process(const string& ir1_path, const string& ir2_path, const string& depth
 	write_normalized_vector(depth_und[0], prefix + "-a-und.bmp");
 	write_normalized_vector(depth_und[1], prefix + "-b-und.bmp");
 
-	// dump normal map
-	{
-		auto position = calc_points(depth_und[0], V1_FX, V1_FY, V1_CX, V1_CY, WIDTH, HEIGHT);
-		auto normal_map = calc_normal_map(position, V1_FX, V1_FY, V1_CX, V1_CY, WIDTH, HEIGHT);
-		dump_normal_map(normal_map, WIDTH, HEIGHT, prefix + "-V1-normal.bmp");
-		dump_shading(normal_map, position, WIDTH, HEIGHT, prefix + "-V1-shading.bmp");
-	}
-	{
-		auto position = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY, WIDTH, HEIGHT);
-		auto normal_map = calc_normal_map(position, V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY, WIDTH, HEIGHT);
-		dump_normal_map(normal_map, WIDTH, HEIGHT, prefix + "-V2-normal.bmp");
-		dump_shading(normal_map, position, WIDTH, HEIGHT, prefix + "-V2-shading.bmp");
-	}
+
 
 	Mat points_1 = calc_points(depth_und[0], V1_FX, V1_FY, V1_CX, V1_CY);
 	Mat points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
@@ -978,7 +984,7 @@ int main(int argc, char* argv[])
 	ReadCalibratedUndistortionTable(undistortLookupTable[1], WIDTH, HEIGHT, TABLE2);
 
 	//string path_file[] = {"D:\\yyk\\capture\\corner\\path.txt", "D:\\yyk\\capture\\desk\\path.txt", "D:\\yyk\\capture\\person\\path.txt"};
-	string path_file[] = {"D:\\yyk\\image\\10Objects\\10-selected\\path.txt"};
+	string path_file[] = {"D:\\cvpr\\10Objects\\10-selected\\path.txt"};
 
 	for (int path_index = 0; path_index < 1; path_index++)
 	{

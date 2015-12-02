@@ -227,6 +227,8 @@ std::vector<DEPTH_TYPE> fit_depth(
 			char mud_path[_MAX_PATH], mub_path[_MAX_PATH];
 			char sigmad_path[_MAX_PATH], sigmab_path[_MAX_PATH];
 			char result_ply[_MAX_PATH];
+			char mud_normal_path[_MAX_PATH];
+			char mud_shading_path[_MAX_PATH];
 			
 			sprintf_s(i2_mub_path, "%s//%d-i2_mub.png", pre, it);
             sprintf_s(i1_path, "%s//%d-i1.png", pre, it);
@@ -237,6 +239,8 @@ std::vector<DEPTH_TYPE> fit_depth(
 			sprintf_s(b_path, "%s//%d-b.png", pre, it);
 
 			sprintf_s(mud_path, "%s//%d-mud.png", pre, it);
+			sprintf_s(mud_normal_path, "%s//%d-mud-normal.png", pre, it);
+			sprintf_s(mud_shading_path, "%s//%d-mud-shading.png", pre, it);
 			sprintf_s(sigmad_path, "%s//%d-sigmad.png", pre, it);
 
 			sprintf_s(mub_path, "%s//%d-mub.png", pre, it);
@@ -248,15 +252,15 @@ std::vector<DEPTH_TYPE> fit_depth(
 			sprintf_s(w2_path, "%s//%d-w2.png", pre, it);
 			sprintf_s(w3_path, "%s//%d-w3.png", pre, it);
 			{
-				auto x = calc_points_from_depth_image(result, depth_width, depth_height,
-					V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-				dump_point_cloud(x, result_ply);
+				//auto x = calc_points_from_depth_image(result, depth_width, depth_height,
+				//	V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+				//dump_point_cloud(x, result_ply);
 			}
 
 			dump_normalized_image(result, d_path, depth_width, depth_height, lb, ub);
-            std::vector<unsigned short> result_bin;
-            for (auto x:result) result_bin.push_back(x);
-            dump_raw_vector(result_bin, d_bin_path);
+            //std::vector<unsigned short> result_bin;
+            //for (auto x:result) result_bin.push_back(x);
+            //dump_raw_vector(result_bin, d_bin_path);
 			printf_s("max: %g\n", *std::max_element(result.begin(), result.end()));
 			dump_normalized_image(bias, b_path, depth_width, depth_height, 0.f, 80.f);
 
@@ -273,6 +277,11 @@ std::vector<DEPTH_TYPE> fit_depth(
             //fprintf(rfp, "%d,%g,%g\n", it, iter_rmse, iter_rmse_true);
             //fflush(rfp);
 			
+			auto points = calc_points_from_depth_image(mud, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
+			auto normals = calc_normal_map(points, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
+			dump_normal_map(normals, depth_width, depth_height, mud_normal_path);
+			dump_shading(normals, points, depth_width, depth_height, mud_shading_path);
+
             dump_normalized_image(mud, mud_path, depth_width, depth_height, lb, ub);
 			dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
 

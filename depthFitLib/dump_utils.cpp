@@ -49,3 +49,58 @@ void    dump_image(
 		}
 	cimage.Save(path);
 }
+
+void dump_normal_map(const std::vector<vector3f>& normal_map, const int width, const int height, const std::string& file_path)
+{
+	assert(normal_map.size() == width * height);
+	//cv::Mat image = cv::Mat::zeros(height, width, CV_8UC3);
+	CImage cimage;
+	cimage.Create(width, height, 32);
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			vector3f normal = normal_map[y * width + x];
+			normal = (normal + vector3f(1.f, 1.f, 1.f)) / 2.0f * 255;
+			//image.at<cv::Vec3b>(y, x) = cv::Vec3b(normal.x, normal.y, normal.z);
+			cimage.SetPixelRGB(x, y, normal.x, normal.y, normal.z);
+		}
+	}
+	//cv::imwrite(file_path, image);
+	cimage.Save(file_path.c_str());
+}
+
+static const vector3f invalid_normal(-1, -1, -1);
+inline bool normal_vaild(const vector3f& v) {
+	return v.x != -1 && v.y != -1 && v.z != -1;
+}
+
+void dump_shading(const std::vector<vector3f>& normal_map, const std::vector<vector3f>& position, const int width, const int height, const std::string& file_path)
+{
+	assert(normal_map.size() == width*height);
+	assert(position.size() == width*height);
+
+	vector3f light_dir(10, 10, 10);
+	light_dir = light_dir.normalized_vector();
+
+	//cv::Mat image = cv::Mat::zeros(height, width, CV_8UC3);
+	CImage cimage;
+	cimage.Create(width, height, 32);
+	for (int y = 0; y < height; ++y)
+	{
+		for (int x = 0; x < width; ++x)
+		{
+			int idx = y * width + x;
+			const vector3f& normal = normal_map[idx];
+			float c = 0;
+			if (normal_vaild(normal))
+			{
+				const vector3f& pos = position[idx];
+				c = normal * light_dir;
+			}
+			c *= 255;
+			//image.at<cv::Vec3b>(y, x) = cv::Vec3b(c, c, c);
+			cimage.SetPixelRGB(x, y, c, c, c);
+		}
+	}
+	//cv::imwrite(file_path, image);
+	cimage.Save(file_path.c_str());
+}

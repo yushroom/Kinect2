@@ -8,6 +8,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Calibrate2Cameras", "Calibrate2Cameras\Calibrate2Cameras.vcxproj", "{300874BF-1250-467D-AA77-FE6C0B66026A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IR2IR", "IR2IR\IR2IR.vcxproj", "{8D53CFEE-3E19-4C3C-A6FD-B520C5A23618}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCD86E3E-32AC-455C-AACD-EADC984B295F} = {CCD86E3E-32AC-455C-AACD-EADC984B295F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stereo_calib", "stereo_calib\stereo_calib.vcxproj", "{5E94FC2D-34FB-4D48-9C11-174CE7B8DE70}"
 EndProject
@@ -32,6 +35,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "synthetic_generator", "..\s
 	ProjectSection(ProjectDependencies) = postProject
 		{CCD86E3E-32AC-455C-AACD-EADC984B295F} = {CCD86E3E-32AC-455C-AACD-EADC984B295F}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "visualizeDepth", "visualizeDepth\visualizeDepth.vcxproj", "{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -187,6 +192,18 @@ Global
 		{50C4381D-E59E-488C-A6BC-256254BD2212}.Release|Win32.Build.0 = Release|Win32
 		{50C4381D-E59E-488C-A6BC-256254BD2212}.Release|x64.ActiveCfg = Release|x64
 		{50C4381D-E59E-488C-A6BC-256254BD2212}.Release|x64.Build.0 = Release|x64
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Debug|Win32.Build.0 = Debug|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Debug|x64.ActiveCfg = Debug|x64
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Debug|x64.Build.0 = Debug|x64
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|Win32.ActiveCfg = Release|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|Win32.Build.0 = Release|Win32
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|x64.ActiveCfg = Release|x64
+		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
