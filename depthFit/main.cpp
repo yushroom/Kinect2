@@ -10,7 +10,7 @@
 #include "dump_utils.h"
 #include "geo_utils.h"
 
-int main(int argc,char **argv)
+int main(int argc,char **argv) 
 {    
     assert(argc == 3);
 	printf("%d\n",sizeof(TCHAR));

@@ -83,3 +83,10 @@ void dump_shading(
 	const int width, 
 	const int height, 
 	const std::string& file_path);
+
+bool read_raw_depth_bin(
+	const std::string file_path,
+	const int width,
+	const int height,
+	std::vector<unsigned short> *depth_pixels
+	);

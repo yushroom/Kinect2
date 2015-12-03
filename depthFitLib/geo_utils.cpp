@@ -2,6 +2,7 @@
 #include <cassert>
 #include <advmath.h>
 #include <vector>
+#include "dump_utils.h"
 
 using std::vector;
 
@@ -168,4 +169,16 @@ std::vector<vector3f> clac_shading(
 	}
 	return ret;
 	//cv::imwrite(file_path, image);
+}
+
+void calc_and_dump_normal_map(
+	const std::vector<float>& depth, 
+	const std::string& file_path,
+	const int width, const int height,
+	const float fx, const float fy,
+	const float cx, const float cy)
+{
+	auto points = calc_points_from_depth_image(depth, width, height, fx, fy, cx, cy);
+	auto normals = calc_points_from_depth_image(depth, width, height, fx, fy, cx, cy);
+	dump_normal_map(normals, width, height, file_path);
 }

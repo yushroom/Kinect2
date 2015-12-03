@@ -11,22 +11,10 @@
 #include <vector>
 #include <windows.h>
 
-
-
-
-
 #define RAW_DEPTH_TYPE unsigned short
 
 #define __DEBUG__
 bool FileExists(const char* strFilename);
-
-
-
-
-
-
-
-
 
 template <class T>
 bool getbin(FILE *fp,std::vector<T>&vec,int width,int height) {

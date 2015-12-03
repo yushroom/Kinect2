@@ -8,7 +8,9 @@
 #include <dump_utils.h>
 #include <gaussian_utils.h>	  
 #include <geo_utils.h>
+#include <iostream>
 
+using namespace std;
 
 #define V2_RESIZED_FX (415.035)
 #define V2_RESIZED_FY (413.996)
@@ -35,14 +37,21 @@ inline void diff(
 		result[i] = mask[i]?(image1[i] - image2[i]):static_cast<DEPTH_TYPE>(0);
 }
 
+inline void update_mask(
+	const DEPTH_IMAGE& image,
+	std::vector<bool>& mask)
+{
+	for (int i = 0; i < image.size(); ++i)
+		if (!VALID_DEPTH_TEST(image[i]))
+			mask[i] = false;
+}
+
 inline void get_mask(
     const DEPTH_IMAGE&  image,
     std::vector<bool>& mask)
 {
     mask.resize(image.size(), true);
-    for (int i=0; i<image.size(); ++i) 
-        if (!VALID_DEPTH_TEST(image[i]))
-            mask[i] = false;
+	update_mask(image, mask);
 }
 
 inline std::vector<float> test_gaussian_sigma(
@@ -64,8 +73,8 @@ inline void fit_gaussian_helper(
 	const int                       image_width,
 	const int                       image_height,
 	const int                       gaussian_width,
-	const double                    sigma_i,
-	const double                    sigma_v
+	const double                    sigma_d,
+	const double                    sigma_r
 	)
 {
 	assert(image_frame.size() == image_width*image_height);
@@ -98,7 +107,7 @@ inline void fit_gaussian_helper(
 					for (int y = 0; y < gaussian_width; ++y) {
 					double dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
 					double dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
-					double exponential = -(dist_coor_sqr / (2 * sigma_i*sigma_i) + dist_value_sqr / (2 * sigma_v*sigma_v));
+					double exponential = -(dist_coor_sqr / (2 * sigma_d*sigma_d) + dist_value_sqr / (2 * sigma_r*sigma_r));
 					double local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) && mask_in[idx] ? exp(exponential) : 0.0;
 				    //if (j == 216 && i == 203) {
         //                printf("%g %g %d\n", exponential, local_weight, mask_in[idx]);
@@ -120,7 +129,7 @@ inline void fit_gaussian_helper(
 					for (int y = 0; y < gaussian_width; ++y) {
 					double dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
 					double dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
-					double exponential = -(dist_coor_sqr / (2 * sigma_i*sigma_i) + dist_value_sqr / (2 * sigma_v*sigma_v));
+					double exponential = -(dist_coor_sqr / (2 * sigma_d*sigma_d) + dist_value_sqr / (2 * sigma_r*sigma_r));
 					double local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) ? exp(exponential) : 0.0;
 					sum_weight += local_weight;
 					p.sigma += local_weight*(local_area_value[x][y] - p.mu)*(local_area_value[x][y] - p.mu);
@@ -159,19 +168,18 @@ std::vector<DEPTH_TYPE> fit_depth(
     const char* pre
     )
 {
-/*
-	auto x = test_gaussian_sigma(1, 5);
-	for (int i = 0; i < x.size(); ++i)
-		printf("%g%c", x[i], i == x.size() - 1 ? '\n' : ' ');
-	getchar();
-	*/
 	assert(depth_frame_v1.size() == depth_frame_v2.size());
 	assert(depth_frame_v1.size() == depth_width*depth_height);
+
 	DEPTH_IMAGE result = depth_frame_v1;
 	DEPTH_IMAGE bias, last;
 	std::vector<bool> maskd, maskb, mask;
 	GAUSSIAN_IMAGE gd, gb;
     get_mask(depth_frame_v2, mask);
+	update_mask(depth_frame_v1, mask);
+	float init_rmse = rmse(depth_frame_v1, depth_frame_v2, mask);
+	cout << "init_rmse: " << init_rmse;
+
 #define DEBUG_DIFF
 #ifdef DEBUG_DIFF         
     FILE *rfp = nullptr;
@@ -251,10 +259,11 @@ std::vector<DEPTH_TYPE> fit_depth(
 			sprintf_s(w1_path, "%s//%d-w1.png", pre, it);
 			sprintf_s(w2_path, "%s//%d-w2.png", pre, it);
 			sprintf_s(w3_path, "%s//%d-w3.png", pre, it);
+			if (false)
 			{
-				//auto x = calc_points_from_depth_image(result, depth_width, depth_height,
-				//	V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
-				//dump_point_cloud(x, result_ply);
+				auto x = calc_points_from_depth_image(result, depth_width, depth_height,
+					V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+				dump_point_cloud(x, result_ply);
 			}
 
 			dump_normalized_image(result, d_path, depth_width, depth_height, lb, ub);
@@ -268,25 +277,27 @@ std::vector<DEPTH_TYPE> fit_depth(
 			seperate_gaussian(gd, mud, sigmad);
 			seperate_gaussian(gb, mub, sigmab);
 
-            float iter_rmse = rmse(mud, depth_frame_v1);
+			float iter_rmse = rmse(mud, depth_frame_v1, maskd);
+			float rmse_mub = rmse(mub, depth_frame_v1, maskb);
             //fprintf(rfp, "%g,%g\n", iter_rmse, initial_rmse);
-            fprintf(rfp, "%g\n", iter_rmse);
+            fprintf(rfp, "%g %g\n", iter_rmse, rmse_mub);
             fflush(rfp);
             //float iter_rmse = rmse(mud, depth_frame_v1);
             //float iter_rmse_true = rmse(mud, depth_frame_v1_true);
             //fprintf(rfp, "%d,%g,%g\n", it, iter_rmse, iter_rmse_true);
             //fflush(rfp);
 			
-			auto points = calc_points_from_depth_image(mud, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
-			auto normals = calc_normal_map(points, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
-			dump_normal_map(normals, depth_width, depth_height, mud_normal_path);
-			dump_shading(normals, points, depth_width, depth_height, mud_shading_path);
-
+			if (it == niter-1) {
+				auto points = calc_points_from_depth_image(mud, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
+				auto normals = calc_normal_map(points, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
+				dump_normal_map(normals, depth_width, depth_height, mud_normal_path);
+				dump_shading(normals, points, depth_width, depth_height, mud_shading_path);
+			}
             dump_normalized_image(mud, mud_path, depth_width, depth_height, lb, ub);
-			dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
+			 //dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
 
-			dump_normalized_image(mub, mub_path, depth_width, depth_height, 0.f, 80.f);
-			dump_normalized_image(sigmab, sigmab_path, depth_width, depth_height);
+			//dump_normalized_image(mub, mub_path, depth_width, depth_height, 0.f, 80.f);
+			//dump_normalized_image(sigmab, sigmab_path, depth_width, depth_height);
 		}
 #endif
 		const int half_gaussian_width = (gaussian_width - 1) / 2;

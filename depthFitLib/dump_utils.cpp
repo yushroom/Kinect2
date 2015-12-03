@@ -1,9 +1,13 @@
 #include "dump_utils.h"
 #include "math_utils.h"
+#include "geo_utils.h"
 
 #include <algorithm>
 #include <atlimage.h>
+#include <iostream>
+#include <string>
 
+using namespace std;
 
 void	dump_point_cloud(
 	const std::vector<vector3f>& points,
@@ -68,6 +72,8 @@ void dump_normal_map(const std::vector<vector3f>& normal_map, const int width, c
 	cimage.Save(file_path.c_str());
 }
 
+
+
 static const vector3f invalid_normal(-1, -1, -1);
 inline bool normal_vaild(const vector3f& v) {
 	return v.x != -1 && v.y != -1 && v.z != -1;
@@ -104,3 +110,12 @@ void dump_shading(const std::vector<vector3f>& normal_map, const std::vector<vec
 	//cv::imwrite(file_path, image);
 	cimage.Save(file_path.c_str());
 }
+
+//bool read_raw_depth_bin(const std::string file_path, const int width, const int height, std::vector<unsigned short> *depth_pixels)
+//{
+//	FILE *depth_in;
+//	std::cout << file_path << std::endl;
+//	fopen_s(&depth_in, file_path.c_str(), "rb");
+//	fread(&(*depth_pixels)[0], sizeof(UINT16), depth_pixels[0].size(), depth_in);
+//	fclose(depth_in);
+//}
