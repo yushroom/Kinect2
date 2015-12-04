@@ -23,7 +23,13 @@ const float DEPTH_INVALID = 1e30f;
 //}
 
 template <typename T>
-static float bilinear(float x, float y, const std::vector<T>& src, int width, int height, bool ignore_zero = false) {
+static float bilinear(
+	float x, float y, 
+	const std::vector<T>& src, 
+	int width, int height, 
+	bool ignore_zero = false, 
+	bool ignore_invalid = false) 
+{
 	int ix0 = x, iy0 = y, ix1 = ix0 + 1, iy1 = iy0 + 1;
 	float qx1 = x - ix0, qy1 = y - iy0, qx0 = 1.f - qx1, qy0 = 1.f - qy1;
 
@@ -38,7 +44,38 @@ static float bilinear(float x, float y, const std::vector<T>& src, int width, in
 			continue;
 		int idx = xx[j] + yy[j] * width;
 		if (ignore_zero && src[idx] == 0) continue;
+		if (ignore_invalid && !VALID_DEPTH_TEST(src[idx])) continue;
 		value += src[idx] * w[j];
+		weight += w[j];
+	}
+
+	return (weight == 0.f ? DEPTH_INVALID : value / weight);
+	//return static_cast<T>(weight == 0.f ? DEPTH_INVALID : value / weight);
+}
+
+template <typename T>
+static float bilinear(
+	float x, float y,
+	const std::function<T(const int x, const int y)> getPixel,
+	int width, int height, 
+	bool ignore_zero = false) 
+{
+	int ix0 = x, iy0 = y, ix1 = ix0 + 1, iy1 = iy0 + 1;
+	float qx1 = x - ix0, qy1 = y - iy0, qx0 = 1.f - qx1, qy0 = 1.f - qy1;
+
+	float weight = 0.f, value = 0.f;
+	float w[] = { qx0*qy0, qx1*qy0, qx0*qy1, qx1*qy1 };
+	//pair<int, int> xy[] = { { ix0, iy0 }, { ix1, iy0 }, { ix0, iy1 }, { ix1, iy1 } };
+	int xx[] = { ix0, ix1, ix0, ix1 };
+	int yy[] = { iy0, iy0, iy1, iy1 };
+
+	for (int j = 0; j < 4; j++) {
+		if (xx[j] < 0 || xx[j] >= width || yy[j] < 0 || yy[j] >= height)
+			continue;
+		//int idx = xx[j] + yy[j] * width;
+		T pixel = getPixel(xx[i], yy[j]);
+		if (ignore_zero && pixel == 0) continue;
+		value += pixel * w[j];
 		weight += w[j];
 	}
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
+#include <numeric>
 #include <math.h>
 
 template <class T>
@@ -25,3 +27,25 @@ rmse(const std::vector<T> &v1, const std::vector<T>& v2, const std::vector<bool>
     result /= count;
     return sqrtf(result);
 }
+
+void bilinear(
+	std::vector<int>&	idx,
+	std::vector<float>& weight,
+	const float			x,
+	const float			y,
+	const int			width,
+	const int			height);
+
+class myBilateralFilter {
+private:
+	std::vector<float> _weight;
+
+public:
+	const int	gaussian_width;
+	const float sigma_d;
+	const float sigma_r;
+
+	myBilateralFilter(const int gaussian_width, const float sigma_d, const float sigma_r) 
+		: gaussian_width(gaussian_width), sigma_d(sigma_d), sigma_r(sigma_r) {
+	}
+};

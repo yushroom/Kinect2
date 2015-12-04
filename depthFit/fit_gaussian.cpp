@@ -12,11 +12,6 @@
 
 using namespace std;
 
-#define V2_RESIZED_FX (415.035)
-#define V2_RESIZED_FY (413.996)
-#define V2_RESIZED_CX (325.237)
-#define V2_RESIZED_CY (234.963)
-
 typedef std::vector<DEPTH_TYPE> DEPTH_IMAGE;
 typedef std::vector<gaussian_pair> GAUSSIAN_IMAGE;
 
@@ -65,6 +60,7 @@ inline std::vector<float> test_gaussian_sigma(
 	return result;
 }
 
+
 inline void fit_gaussian_helper(
 	GAUSSIAN_IMAGE&                 result,
 	std::vector<bool>&              mask,
@@ -73,8 +69,8 @@ inline void fit_gaussian_helper(
 	const int                       image_width,
 	const int                       image_height,
 	const int                       gaussian_width,
-	const double                    sigma_d,
-	const double                    sigma_r
+	const FLOAT                     sigma_d,
+	const FLOAT                     sigma_r
 	)
 {
 	assert(image_frame.size() == image_width*image_height);
@@ -82,73 +78,139 @@ inline void fit_gaussian_helper(
 	mask.assign(image_frame.size(), true);
 
 	const int half_gaussian_width = (gaussian_width - 1) / 2;
+
+	const FLOAT inv_2_sigma_d_sqr = 1.0f / (sigma_d * sigma_d);
+	const FLOAT inv_2_sigma_r_sqr = 1.0f / (sigma_r * sigma_r);
+
+	//int j;
+
+#if 1
+#pragma omp parallel for
+	for (int idx = 0; idx < image_width * image_height; ++idx)
+	{
+		//int idx = j + i*image_width;
+		int j = idx % image_width;
+		int i = idx / image_width;
+		auto &p = result[idx];
+		int nvalid = 0;
+		//outliers
+		if (i - half_gaussian_width < 0 || i + half_gaussian_width >= image_height
+			|| j - half_gaussian_width < 0 || j + half_gaussian_width >= image_width) 
+		{
+			p.mu = 0.0;
+			p.sigma = 0.0;
+		}
+		else 
+		{
+			std::vector<std::vector<FLOAT>>
+				local_area_value(gaussian_width, std::vector<FLOAT>(gaussian_width, 0.0));
+			for (int k = i - half_gaussian_width, x = 0; k <= i + half_gaussian_width; ++k, ++x)
+				for (int l = j - half_gaussian_width, y = 0; l <= j + half_gaussian_width; ++l, ++y){
+					int local_idx = l + k*image_width;
+					local_area_value[x][y] = image_frame[local_idx];
+				}
+			FLOAT sum_weight = 0.0;
+			p.mu = 0.0;
+			for (int x = 0, pivot = gaussian_width / 2; x < gaussian_width; ++x)
+				for (int y = 0; y < gaussian_width; ++y) {
+					FLOAT dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
+					FLOAT dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
+					FLOAT exponential = -(dist_coor_sqr * inv_2_sigma_d_sqr + dist_value_sqr * inv_2_sigma_r_sqr);
+					FLOAT local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) && mask_in[idx] ? exp(exponential) : 0.0f;
+
+					if (local_weight != 0.0) nvalid++;
+					sum_weight += local_weight;
+					p.mu += local_weight * local_area_value[x][y];
+				}
+			p.mu /= sum_weight;
+
+			p.sigma = 0.0;
+			sum_weight = 0.0;
+			for (int x = 0, pivot = gaussian_width / 2; x < gaussian_width; ++x)
+				for (int y = 0; y < gaussian_width; ++y) {
+					FLOAT dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
+					FLOAT dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
+					FLOAT exponential = -(dist_coor_sqr * inv_2_sigma_d_sqr + dist_value_sqr * inv_2_sigma_r_sqr);
+					FLOAT local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) ? exp(exponential) : 0.0f;
+					sum_weight += local_weight;
+					p.sigma += local_weight*(local_area_value[x][y] - p.mu)*(local_area_value[x][y] - p.mu);
+				}
+			p.sigma = sqrt(p.sigma / sum_weight);
+			if (nvalid < gaussian_width*gaussian_width / 2 || p.sigma == 0.0) mask[idx] = false;
+		}
+	}
+
+#else
+#pragma omp parallel for
 	for (int i = 0; i < image_height; ++i)
-		for (int j = 0; j < image_width; ++j) {
+	{
+		for (int j = 0; j < image_width; ++j) 
+		{
 			int idx = j + i*image_width;
 			auto &p = result[idx];
 			int nvalid = 0;
 			//outliers
 			if (i - half_gaussian_width < 0 || i + half_gaussian_width >= image_height
-				|| j - half_gaussian_width < 0 || j + half_gaussian_width >= image_width) {
+				|| j - half_gaussian_width < 0 || j + half_gaussian_width >= image_width) 
+			{
 				p.mu = 0.0;
 				p.sigma = 0.0;
 			}
-			else {
+			else 
+			{
 				std::vector<std::vector<double>>
 					local_area_value(gaussian_width, std::vector<double>(gaussian_width, 0.0));
 				for (int k = i - half_gaussian_width, x = 0; k <= i + half_gaussian_width; ++k, ++x)
 					for (int l = j - half_gaussian_width, y = 0; l <= j + half_gaussian_width; ++l, ++y){
-					int local_idx = l + k*image_width;
-					local_area_value[x][y] = image_frame[local_idx];
+						int local_idx = l + k*image_width;
+						local_area_value[x][y] = image_frame[local_idx];
 					}
 				double sum_weight = 0.0;
 				p.mu = 0.0;
 				for (int x = 0, pivot = gaussian_width / 2; x < gaussian_width; ++x)
 					for (int y = 0; y < gaussian_width; ++y) {
-					double dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
-					double dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
-					double exponential = -(dist_coor_sqr / (2 * sigma_d*sigma_d) + dist_value_sqr / (2 * sigma_r*sigma_r));
-					double local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) && mask_in[idx] ? exp(exponential) : 0.0;
-				    //if (j == 216 && i == 203) {
-        //                printf("%g %g %d\n", exponential, local_weight, mask_in[idx]);
-        //                getchar();
-        //            }
-                    
-                    if (local_weight != 0.0) nvalid++;
-					sum_weight += local_weight;
-					p.mu += local_weight * local_area_value[x][y];
+						double dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
+						double dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
+						double exponential = -(dist_coor_sqr * inv_2_sigma_d_sqr + dist_value_sqr / inv_2_sigma_r_sqr);
+						double local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) && mask_in[idx] ? exp(exponential) : 0.0;
+
+						if (local_weight != 0.0) nvalid++;
+						sum_weight += local_weight;
+						p.mu += local_weight * local_area_value[x][y];
 					}
 				p.mu /= sum_weight;
-                //if (j == 216 && i == 203) {
-                //    printf("%g %g\n", p.mu, sum_weight);
-                //    getchar();
-                //}
+
 				p.sigma = 0.0;
 				sum_weight = 0.0;
 				for (int x = 0, pivot = gaussian_width / 2; x < gaussian_width; ++x)
 					for (int y = 0; y < gaussian_width; ++y) {
-					double dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
-					double dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
-					double exponential = -(dist_coor_sqr / (2 * sigma_d*sigma_d) + dist_value_sqr / (2 * sigma_r*sigma_r));
-					double local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) ? exp(exponential) : 0.0;
-					sum_weight += local_weight;
-					p.sigma += local_weight*(local_area_value[x][y] - p.mu)*(local_area_value[x][y] - p.mu);
+						double dist_coor_sqr = (x - pivot)*(x - pivot) + (y - pivot)*(y - pivot);
+						double dist_value_sqr = (local_area_value[x][y] - image_frame[idx])*(local_area_value[x][y] - image_frame[idx]);
+						double exponential = -(dist_coor_sqr * inv_2_sigma_d_sqr + dist_value_sqr / inv_2_sigma_r_sqr);
+						double local_weight = VALID_DEPTH_TEST(local_area_value[x][y]) ? exp(exponential) : 0.0;
+						sum_weight += local_weight;
+						p.sigma += local_weight*(local_area_value[x][y] - p.mu)*(local_area_value[x][y] - p.mu);
 					}
-				p.sigma = sqrt(p.sigma / sum_weight); 
+				p.sigma = sqrt(p.sigma / sum_weight);
 				if (nvalid < gaussian_width*gaussian_width / 2 || p.sigma == 0.0) mask[idx] = false;
 			}
-		}
+		} // end for
+	} // end for
+#endif
 }
 
 inline void seperate_gaussian(const GAUSSIAN_IMAGE& image, std::vector<float> &mu, std::vector<float> &sigma) {
 	mu.clear();
 	sigma.clear();
+	mu.reserve(image.size());
+	sigma.reserve(image.size());
+
 	for (auto x : image)
 		mu.push_back(x.mu), sigma.push_back(x.sigma);
 }
 
-inline double l2norm(const DEPTH_IMAGE& image) {
-	double sum_sqr = 0.0;
+inline FLOAT l2norm(const DEPTH_IMAGE& image) {
+	FLOAT sum_sqr = 0.0;
 	for (auto x : image) sum_sqr += x*x;
 	printf("L2NORM:%g\n", sum_sqr);
 	return sqrt(sum_sqr);
@@ -160,8 +222,8 @@ std::vector<DEPTH_TYPE> fit_depth(
 	const int depth_width,
 	const int depth_height,
 	const int gaussian_width,
-	const double sigma_i,
-	const double sigma_v,
+	const FLOAT sigma_i,
+	const FLOAT sigma_v,
 	std::function<float(float)> beta_v1,
 	std::function<float(float)> beta_v2,
 	const int niter,
@@ -189,7 +251,8 @@ std::vector<DEPTH_TYPE> fit_depth(
 		fopen_s(&rfp, path, "w");
 	}
 #endif
-	for (int it = 1; it <= niter; ++it) {
+	for (int it = 1; it <= niter; ++it) 
+	{
 		printf("%dth iter\r", it);
         get_mask(result, mask);
 		diff(depth_frame_v2, result, mask, bias);
@@ -266,12 +329,12 @@ std::vector<DEPTH_TYPE> fit_depth(
 				dump_point_cloud(x, result_ply);
 			}
 
-			dump_normalized_image(result, d_path, depth_width, depth_height, lb, ub);
+			//dump_normalized_image(result, d_path, depth_width, depth_height, lb, ub);
             //std::vector<unsigned short> result_bin;
             //for (auto x:result) result_bin.push_back(x);
             //dump_raw_vector(result_bin, d_bin_path);
 			printf_s("max: %g\n", *std::max_element(result.begin(), result.end()));
-			dump_normalized_image(bias, b_path, depth_width, depth_height, 0.f, 80.f);
+			//dump_normalized_image(bias, b_path, depth_width, depth_height, 0.f, 80.f);
 
 			std::vector<float> mud, sigmad, mub, sigmab;
 			seperate_gaussian(gd, mud, sigmad);
@@ -293,7 +356,7 @@ std::vector<DEPTH_TYPE> fit_depth(
 				dump_normal_map(normals, depth_width, depth_height, mud_normal_path);
 				dump_shading(normals, points, depth_width, depth_height, mud_shading_path);
 			}
-            dump_normalized_image(mud, mud_path, depth_width, depth_height, lb, ub);
+            //dump_normalized_image(mud, mud_path, depth_width, depth_height, lb, ub);
 			 //dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
 
 			//dump_normalized_image(mub, mub_path, depth_width, depth_height, 0.f, 80.f);
@@ -337,9 +400,9 @@ std::vector<DEPTH_TYPE> fit_depth(
         //dump_normalized_image(w2_image, w2_path, 512, 424, 0.f, 1.f);
         //dump_normalized_image(w3_image, w3_path, 512, 424, 0.f, 1.f);
         //dump_image(w_image, w1_path, 512, 424);
-        dump_normalized_image(i2_mub, i2_mub_path, depth_width, depth_height, lb, ub);
-        dump_normalized_image(depth_frame_v1, i1_path, depth_width, depth_height, lb, ub);
-        dump_normalized_image(depth_frame_v2, i2_path, depth_width, depth_height, lb, ub);
+        //dump_normalized_image(i2_mub, i2_mub_path, depth_width, depth_height, lb, ub);
+        //dump_normalized_image(depth_frame_v1, i1_path, depth_width, depth_height, lb, ub);
+        //dump_normalized_image(depth_frame_v2, i2_path, depth_width, depth_height, lb, ub);
 		printf_s("min delta:%g max delta:%g\n", *std::min_element(delta.begin(), delta.end()), *std::max_element(delta.begin(), delta.end()));
 		std::cout << l2norm(delta) << std::endl;
 

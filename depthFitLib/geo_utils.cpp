@@ -19,25 +19,25 @@ std::vector<vector3f> calc_points_from_depth_image(
 	const float					cy)
 {
 	assert(depth.size() == width * height);
-	 float inv_fx = 1.f / fx;
-	 float inv_fy = 1.f / fy;
-	 std::vector<vector3f> points(width*height);
-	 for (int y = 0; y < height; ++y)
-		 for (int x = 0; x < width; ++x) {
-			 int idx = y * width + x;
-			 float z = depth[idx];
-			 if (!VALID_DEPTH_TEST(z))
-			 {
-				 points[idx] = vector3f(x, y, -1);	// invalid
-			 }
-			 else {
-				 float xx = (x + 0.5f - cx) * inv_fx * z;
-				 float yy = (y + 0.5f - cy) * inv_fy * z;
-				 points[idx] = vector3f(xx, yy, z);
-			 }
-		 }
-
-	 return points;
+	const float inv_fx = 1.f / fx;
+	const float inv_fy = 1.f / fy;
+	std::vector<vector3f> points(width*height);
+#pragma omp parallel for
+	for (int y = 0; y < height; ++y)
+		for (int x = 0; x < width; ++x) {
+			int idx = y * width + x;
+			float z = depth[idx];
+			if (!VALID_DEPTH_TEST(z))
+			{
+				points[idx] = vector3f(x, y, -1);	// invalid
+			}
+			else {
+				float xx = (x + 0.5f - cx) * inv_fx * z;
+				float yy = (y + 0.5f - cy) * inv_fy * z;
+				points[idx] = vector3f(xx, yy, z);
+			}
+		}
+	return points;
 }
 
 std::vector<vector3f> calc_points_from_depth_image(
@@ -53,6 +53,7 @@ std::vector<vector3f> calc_points_from_depth_image(
 	float inv_fx = 1.f / fx;
 	float inv_fy = 1.f / fy;
 	std::vector<vector3f> points(width*height);
+#pragma omp parallel for
 	for (int y = 0; y < height; ++y)
 		for (int x = 0; x < width; ++x) {
 			int idx = y * width + x;
@@ -150,22 +151,23 @@ std::vector<vector3f> clac_shading(
 
 	//cv::Mat image = cv::Mat::zeros(height, width, CV_8UC3);
 	std::vector<vector3f> ret(width * height);
-	for (int y = 0; y < height; ++y)
+	//for (int y = 0; y < height; ++y)
+	//{
+	//	for (int x = 0; x < width; ++x)
+#pragma omp parallel for
+	for (int idx = 0; idx < width * height; ++idx)
 	{
-		for (int x = 0; x < width; ++x)
+		//int idx = y * width + x;
+		const vector3f& normal = normal_map[idx];
+		float c = 0;
+		if (normal_vaild(normal))
 		{
-			int idx = y * width + x;
-			const vector3f& normal = normal_map[idx];
-			float c = 0;
-			if (normal_vaild(normal))
-			{
-				const vector3f& pos = position[idx];
-				c = normal * light_dir;
-			}
-			c *= 255;
-			//image.at<cv::Vec3b>(y, x) = cv::Vec3b(c, c, c);
-			ret[idx] = vector3f(c, c, c);
+			const vector3f& pos = position[idx];
+			c = normal * light_dir;
 		}
+		c *= 255;
+		//image.at<cv::Vec3b>(y, x) = cv::Vec3b(c, c, c);
+		ret[idx] = vector3f(c, c, c);
 	}
 	return ret;
 	//cv::imwrite(file_path, image);
