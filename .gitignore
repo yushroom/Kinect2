@@ -21,3 +21,7 @@
 /build/*
 /rectDetector/x64
 /stereo_calib/x64
+/Calibrate2Cameras/x64
+/Depth2Ply/x64
+/ProjectRGB/x64
+/NoiseMode/x64
