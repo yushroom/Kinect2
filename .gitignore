@@ -15,3 +15,7 @@
 /depthFitLib/Debug
 /depthFitLib/Release
 /synthetic_generator/x64
+/Kinectfusion_v2/x64
+/Kinectfusion_v2/Debug
+/Kinectfusion_v2/Release
+/build/*

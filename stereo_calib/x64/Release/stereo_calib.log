@@ -1,0 +1,11 @@
+﻿Build started 12/1/2015 11:51:37 AM.
+     1>Project "F:\SourceCode\Kinect2\stereo_calib\stereo_calib.vcxproj" on node 5 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /ID:\yyk\workspace\library\opencv_3_0\opencv\build\include /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D _MBCS /Gm- /EHsc /MD /GS /Gy /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt stereo_calib.cpp
+         stereo_calib.cpp
+     1>stereo_calib.cpp(25): fatal error C1083: Cannot open include file: 'opencv2/calib3d/calib3d.hpp': No such file or directory
+     1>Done Building Project "F:\SourceCode\Kinect2\stereo_calib\stereo_calib.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.22
