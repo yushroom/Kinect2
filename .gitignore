@@ -19,3 +19,5 @@
 /Kinectfusion_v2/Debug
 /Kinectfusion_v2/Release
 /build/*
+/rectDetector/x64
+/stereo_calib/x64
