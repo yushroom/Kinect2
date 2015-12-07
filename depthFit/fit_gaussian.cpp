@@ -102,8 +102,13 @@ inline void fit_gaussian_helper(
 		}
 		else 
 		{
-			std::vector<std::vector<FLOAT>>
-				local_area_value(gaussian_width, std::vector<FLOAT>(gaussian_width, 0.0));
+			//std::vector<std::vector<FLOAT>>
+			//	local_area_value(gaussian_width, std::vector<FLOAT>(gaussian_width, 0.0));
+			//vector <std::vector<FLOAT>> local_area_value(gaussian_width);
+			//for ()
+			FLOAT* local_memory = new FLOAT[gaussian_width * gaussian_width];
+			FLOAT* local_area_value = new FLOAT*[gaussian_width];
+
 			for (int k = i - half_gaussian_width, x = 0; k <= i + half_gaussian_width; ++k, ++x)
 				for (int l = j - half_gaussian_width, y = 0; l <= j + half_gaussian_width; ++l, ++y){
 					int local_idx = l + k*image_width;
@@ -350,12 +355,13 @@ std::vector<DEPTH_TYPE> fit_depth(
             //fprintf(rfp, "%d,%g,%g\n", it, iter_rmse, iter_rmse_true);
             //fflush(rfp);
 			
-			if (it == niter-1) {
-				auto points = calc_points_from_depth_image(mud, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
-				auto normals = calc_normal_map(points, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
-				dump_normal_map(normals, depth_width, depth_height, mud_normal_path);
-				dump_shading(normals, points, depth_width, depth_height, mud_shading_path);
-			}
+			//if (it == niter-1) {
+			//	auto points = calc_points_from_depth_image(mud, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
+			//	auto normals = calc_normal_map(points, depth_width, depth_height, V1_FX, V1_FY, V1_CX, V1_CY);
+			//	dump_normal_map(normals, depth_width, depth_height, mud_normal_path);
+			//	dump_shading(normals, points, depth_width, depth_height, mud_shading_path);
+			//}
+
             //dump_normalized_image(mud, mud_path, depth_width, depth_height, lb, ub);
 			 //dump_normalized_image(sigmad, sigmad_path, depth_width, depth_height);
 

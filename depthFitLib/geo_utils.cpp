@@ -173,14 +173,16 @@ std::vector<vector3f> clac_shading(
 	//cv::imwrite(file_path, image);
 }
 
-void calc_and_dump_normal_map(
+void calc_and_dump_normal_map_and_shading (
 	const std::vector<float>& depth, 
-	const std::string& file_path,
+	const std::string& normal_file_path,
+	const std::string& shading_file_path,
 	const int width, const int height,
 	const float fx, const float fy,
 	const float cx, const float cy)
 {
 	auto points = calc_points_from_depth_image(depth, width, height, fx, fy, cx, cy);
 	auto normals = calc_points_from_depth_image(depth, width, height, fx, fy, cx, cy);
-	dump_normal_map(normals, width, height, file_path);
+	dump_normal_map(normals, width, height, normal_file_path);
+	dump_shading(normals, points, width, height, shading_file_path);
 }

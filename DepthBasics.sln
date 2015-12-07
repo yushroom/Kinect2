@@ -38,6 +38,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "synthetic_generator", "..\s
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "visualizeDepth", "visualizeDepth\visualizeDepth.vcxproj", "{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{55CE4F60-22CC-446A-AEAE-CE5F99D01715}"
+	ProjectSection(SolutionItems) = preProject
+		KinectProject\KinectProject.vcxproj = KinectProject\KinectProject.vcxproj
+		Performance1.psess = Performance1.psess
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KinectProject", "KinectProject\KinectProject.vcxproj", "{95510E07-ABC9-4C03-9B08-CFFAF864B576}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -204,8 +212,23 @@ Global
 		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|Win32.Build.0 = Release|Win32
 		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|x64.ActiveCfg = Release|x64
 		{D338D4C0-9EB1-4041-B88A-D6D8881FC1DE}.Release|x64.Build.0 = Release|x64
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Debug|Win32.ActiveCfg = Debug|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Debug|Win32.Build.0 = Debug|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Debug|x64.ActiveCfg = Debug|x64
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Debug|x64.Build.0 = Debug|x64
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Release|Win32.ActiveCfg = Release|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Release|Win32.Build.0 = Release|Win32
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Release|x64.ActiveCfg = Release|x64
+		{95510E07-ABC9-4C03-9B08-CFFAF864B576}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

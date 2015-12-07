@@ -10,7 +10,7 @@
 using namespace std;
 
 void	dump_point_cloud(
-	const std::vector<vector3f>& points,
+	const vector<vector3f>& points,
 	const char *path,
 	const vector3b rgb)
 {
@@ -39,7 +39,7 @@ void	dump_point_cloud(
 }
 
 void    dump_image(
-    const std::vector<vector3b>&    image,
+    const vector<vector3b>&    image,
     const char*                     path,
     const int                       width,
     const int                       height)
@@ -54,7 +54,7 @@ void    dump_image(
 	cimage.Save(path);
 }
 
-void dump_normal_map(const std::vector<vector3f>& normal_map, const int width, const int height, const std::string& file_path)
+void dump_normal_map(const vector<vector3f>& normal_map, const int width, const int height, const string& file_path)
 {
 	assert(normal_map.size() == width * height);
 	//cv::Mat image = cv::Mat::zeros(height, width, CV_8UC3);
@@ -79,7 +79,12 @@ inline bool normal_vaild(const vector3f& v) {
 	return v.x != -1 && v.y != -1 && v.z != -1;
 }
 
-void dump_shading(const std::vector<vector3f>& normal_map, const std::vector<vector3f>& position, const int width, const int height, const std::string& file_path)
+void dump_shading(
+	const vector<vector3f>&	normal_map, 
+	const vector<vector3f>&	position, 
+	const int				width, 
+	const int				height, 
+	const string&			file_path)
 {
 	assert(normal_map.size() == width*height);
 	assert(position.size() == width*height);

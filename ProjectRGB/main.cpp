@@ -117,6 +117,7 @@ Mat vector_to_img_uc(const vector<T>& vec, int w = WIDTH, int h = HEIGHT, float 
 
 template <typename T>
 inline float bilinear(float x, float y, const vector<T>& src, int width, int height, bool ignore_zero = false) {
+
 	int ix0 = x, iy0 = y, ix1 = ix0 + 1, iy1 = iy0 + 1;
 	float qx1 = x - ix0, qy1 = y - iy0, qx0 = 1.f - qx1, qy0 = 1.f - qy1;
 

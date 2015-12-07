@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{21C720BF-4C87-44D0-95BA-C336245E0D85}</ProjectGuid>
-    <RootNamespace>depthFit</RootNamespace>
+    <ProjectGuid>{95510E07-ABC9-4C03-9B08-CFFAF864B576}</ProjectGuid>
+    <RootNamespace>KinectProject</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -34,7 +34,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <UseIntelMKL>No</UseIntelMKL>
+    <UseIntelMKL>Parallel</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -50,7 +50,6 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
     <UseIntelMKL>Parallel</UseIntelMKL>
-    <UseILP64Interfaces>false</UseILP64Interfaces>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -68,17 +67,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(OPENCV_PATH)\include</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(OPENCV_PATH)\include;$(CODEX_PATH)\include;$(SolutionDir)depthFitLib</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(OPENCV_PATH)\x64\vc12\lib;$(ADVMATH_PATH)\x64\vc12;$(Solutiondir)x64\Debug</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(OPENCV_PATH)\include;$(CODEX_PATH)\include;$(SolutionDir)depthFitLib</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(OPENCV_PATH)\x64\vc12\lib;$(ADVMATH_PATH)\x64\vc12;$(Solutiondir)x64\Release</LibraryPath>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -94,12 +83,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\build\include;D:\yyk\workspace\library\CodeX\include;D:\yyk\workspace\library\AdvMath;$(SolutionDir)depthFitLib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opencv_ts300.lib;opencv_ts300d.lib;opencv_world300.lib;opencv_world300d.lib;depthFitLib.lib;AdvMathd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\lib\Debug;$(ADVMATH_PATH)\x64\vc12;$(Solutiondir)x64\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippicvmt.lib;AdvMathd.lib;depthFitLib.lib;opencv_stitching300d.lib;opencv_videostab300d.lib;opencv_shape300d.lib;opencv_objdetect300d.lib;opencv_photo300d.lib;opencv_calib3d300d.lib;opencv_features2d300d.lib;opencv_flann300d.lib;opencv_highgui300d.lib;opencv_videoio300d.lib;opencv_imgcodecs300d.lib;opencv_ml300d.lib;opencv_video300d.lib;opencv_imgproc300d.lib;opencv_core300d.lib;opencv_hal300d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,24 +113,22 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\build\include;D:\yyk\workspace\library\CodeX\include;D:\yyk\workspace\library\AdvMath;$(SolutionDir)depthFitLib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opencv_ts300.lib;opencv_world300.lib;depthFitLib.lib;AdvMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\Intel\Composer XE 2015\mkl\lib\intel64;C:\Program Files (x86)\Intel\Composer XE 2015\compiler\lib\intel64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippicvmt.lib;AdvMath.lib;opencv_stitching300.lib;opencv_videostab300.lib;opencv_shape300.lib;opencv_objdetect300.lib;opencv_photo300.lib;opencv_calib3d300.lib;opencv_features2d300.lib;opencv_flann300.lib;opencv_highgui300.lib;opencv_videoio300.lib;opencv_imgcodecs300.lib;opencv_ml300.lib;opencv_video300.lib;opencv_imgproc300.lib;opencv_core300.lib;opencv_hal300.lib;depthFitLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\yyk\workspace\library\opencv_3_0\opencv\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64;D:\yyk\workspace\library\opencv_3_0\opencv\sources\build\lib\Release;$(ADVMATH_PATH)\x64\vc12;$(Solutiondir)x64\Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="fit_gaussian.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="auxiliar.h" />
-    <ClInclude Include="fit_gaussian.h" />
+    <ClInclude Include="utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

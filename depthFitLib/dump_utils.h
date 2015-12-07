@@ -78,11 +78,11 @@ void dump_normal_map(
 	const std::string& file_path);
 
 void dump_shading(
-	const std::vector<vector3f>& normal_map, 
-	const std::vector<vector3f>& position, 
-	const int width, 
-	const int height, 
-	const std::string& file_path);
+	const std::vector<vector3f>&	normal_map, 
+	const std::vector<vector3f>&	position, 
+	const int						width, 
+	const int						height, 
+	const std::string&				file_path);
 
 bool read_raw_depth_bin(
 	const std::string file_path,

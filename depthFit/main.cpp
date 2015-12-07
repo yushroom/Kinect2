@@ -12,10 +12,10 @@
 
 int main(int argc,char **argv) 
 {    
-    assert(argc >= 3);
-	printf("%d\n",sizeof(TCHAR));
+    //assert(argc >= 3);
 	//Parameters_T *params = readIniFile("../depthFit.ini");
-    Parameters_T *params = readIniFile(argv[1]);
+	Parameters_T *params = argc >= 3 ? readIniFile(argv[1]) : readIniFile(R"(D:\cvpr\10Objects\depthFit_0.ini)");
+	const char* pre = argc >=3 ?  argv[2] : R"(D:\cvpr\10Objects\testOut)";
 
 	std::vector<std::vector<DEPTH_TYPE>>v1_depths;
 	std::vector<std::vector<DEPTH_TYPE>>v2_depths;
@@ -43,7 +43,7 @@ int main(int argc,char **argv)
 	const int		niter = 10;
 	//const char		pre[] = "D:\\cvpr\\desk\\fit_gaussian";
     //const char		pre[] = R"(D:\cvpr\synthetic_depth_image\fit_gaussian)";
-    const char* pre = argv[2];
+    
 	
 	ret_depths.resize(params->frames);
 	for (int i = 0; i < params->frames; i++) {
@@ -62,9 +62,9 @@ int main(int argc,char **argv)
 			);
 	}
 	MergeBinFromFile(std::string(pre) + "\\ret.bin",ret_depths);
-	auto points = calc_points_from_depth_image(ret_depths[0], params->width, params->height, V1_FX, V1_FY, V1_CX, V1_CY);
-	auto normals = calc_normal_map(points, params->width, params->height, V1_FX, V1_FY, V1_CX, V1_CY);
-	dump_normal_map(normals, params->width, params->height, std::string(pre) + "\\ret-normal.png");
-	dump_shading(normals, points, params->width, params->height, std::string(pre) + "\\ret-shading.png");
+	//auto points = calc_points_from_depth_image(ret_depths[0], params->width, params->height, V1_FX, V1_FY, V1_CX, V1_CY);
+	//auto normals = calc_normal_map(points, params->width, params->height, V1_FX, V1_FY, V1_CX, V1_CY);
+	//dump_normal_map(normals, params->width, params->height, std::string(pre) + "\\ret-normal.png");
+	//dump_shading(normals, points, params->width, params->height, std::string(pre) + "\\ret-shading.png");
 	return 0;
 }

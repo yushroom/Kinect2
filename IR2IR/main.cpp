@@ -12,14 +12,11 @@
 #include "utils.hpp"
 #include "dump_utils.h"
 #include "geo_utils.h"
-//#include "fit_gaussian.h"
 
 using namespace cv;
 using namespace std;
 
 typedef unsigned short UINT16;
-
-//#define WRITE_BB_BIN_ONLY
 
 #ifdef _DEBUG
 #define WRITE_FILE
@@ -40,11 +37,6 @@ static const bool write_file = false;
 #define V1_FY (585.688)
 #define V1_CX (321.198)
 #define V1_CY (232.202)
-
-//#define V2_FX (364.440)
-//#define V2_FY (363.688)
-//#define V2_CX (259.818)
-//#define V2_CY (207.523)
 
 #define V2_RESIZED_FX (415.035)
 #define V2_RESIZED_FY (413.996)
@@ -221,6 +213,41 @@ inline void writePly(const Mat& points, const vector<unsigned char>& IR, const s
 			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, unsigned char(c*r), unsigned char(c*g), unsigned char(c*b));
 		}
 		fclose(fp);
+}
+
+inline void writePly(const Mat& points, const string& filename, int w = WIDTH, int h = HEIGHT,
+	float r = 1, float g = 1, float b = 1, float tx = 0, float ty = 0, float tz = 0)
+{
+	FILE *fp;
+	fopen_s(&fp, filename.c_str(), "w");
+	fprintf(fp, "ply\n");
+	fprintf(fp, "format ascii 1.0\n");
+	fprintf(fp, "comment file created by Microsoft Kinect Fusion\n");
+	fprintf(fp, "element vertex %d\n", w * h);
+	fprintf(fp, "property float x\n");
+	fprintf(fp, "property float y\n");
+	fprintf(fp, "property float z\n");
+	fprintf(fp, "property uchar red\n");
+	fprintf(fp, "property uchar green\n");
+	fprintf(fp, "property uchar blue\n");
+	fprintf(fp, "element face 0\n");
+	fprintf(fp, "property list uchar int vertex_index\n");
+	fprintf(fp, "end_header\n");
+
+	for (int j = 0; j < h; ++j)
+		for (int i = 0; i < w; ++i) {
+			int idx = j * w + i;
+			//int c = IR.at<unsigned char>(j, i);
+			//int c = IR[idx];
+			int c = 255;
+			float x = points.at<float>(0, idx) + tx;
+			float y = points.at<float>(1, idx) + ty;
+			y = -y;
+			float z = points.at<float>(2, idx) + tz;
+			z = -z;
+			fprintf_s(fp, "%f %f %f %d %d %d\n", x, y, z, unsigned char(c*r), unsigned char(c*g), unsigned char(c*b));
+		}
+	fclose(fp);
 }
 
 inline void writePly2(const Mat& points1, const Mat& points2, const Mat& IR1, const Mat& IR2, const char *filename,
@@ -650,6 +677,8 @@ void project_to_another_camera_new(
 	//Mat img_new_depth = Mat::zeros(HEIGHT, WIDTH, CV_32F);
 	vector<float> depth1_to_2(WIDTH * HEIGHT, DEPTH_INVALID);
 
+	Mat u_img = Mat::zeros(480, 640, CV_8UC1);
+
 	for (int j = 0; j < HEIGHT; ++j) {
 		for (int i = 0; i < WIDTH; ++i) {
 			int idx = j * WIDTH + i;
@@ -665,6 +694,7 @@ void project_to_another_camera_new(
 			x2 = points_2_to_1.at<float>(0, idx) + tx;
 			y2 = points_2_to_1.at<float>(1, idx) + ty;
 			z2 = points_2_to_1.at<float>(2, idx) + tz;
+			//z2 = 1100;
 
 			if (!VALID_DEPTH_TEST(z2)) {
 				//img_new_IR.at<unsigned char>(j, i) = 0;
@@ -677,21 +707,27 @@ void project_to_another_camera_new(
 			u2 = (fx * x2 / z2 + cx - 0.5f);
 			v2 = (fy * y2 / z2 + cy - 0.5f);
 
-			depth1_to_2[idx] = bilinear(u2, v2, depth_und_1, WIDTH, HEIGHT, true, true);
+			u_img.at<unsigned char>(j, i) = u2 / 640 * 255;
+
+			//depth1_to_2[idx] = bilinear(u2, v2, depth_und_1, WIDTH, HEIGHT, true, true);
 
 			// 1 -> 2
-			//if (u2 >= 0 && u2 < WIDTH && v2 >= 0 && v2 < HEIGHT) {
-			//	//img_new_IR.at<unsigned char>(j, i) = IR_und_1[v2 * WIDTH + u2];
-			//	img_new_depth.at<float>(j, i) = DEPTH_INVALID;
-			//	depth1_to_2[idx] = depth_und_1[v2 * WIDTH + u2];
-			//}
-			//else {
-			//	//img_new_IR.at<unsigned char>(j, i) = 0;
-			//	img_new_depth.at<float>(j, i) = DEPTH_INVALID;
-			//	depth1_to_2[idx] = DEPTH_INVALID;
-			//}
+			if (u2 >= 0 && u2 < WIDTH && v2 >= 0 && v2 < HEIGHT) {
+				//img_new_IR.at<unsigned char>(j, i) = IR_und_1[v2 * WIDTH + u2];
+				//img_new_depth.at<float>(j, i) = DEPTH_INVALID;
+				depth1_to_2[idx] = depth_und_1[int(v2) * WIDTH + int(u2)];
+				//depth1_to_2[idx] = depth_und_1[(v2) * WIDTH + (u2)];
+				//depth1_to_2[idx] = 1100 + (int)u2;
+			}
+			else {
+				//img_new_IR.at<unsigned char>(j, i) = 0;
+				//img_new_depth.at<float>(j, i) = DEPTH_INVALID;
+				depth1_to_2[idx] = DEPTH_INVALID;
+			}
 		}
 	}
+
+	imwrite(prefix + "-uimag.bmp", u_img);
 
 	if (proj_type == v1_to_v2)
 		imwrite(prefix + "-2-diff-(1to2).bmp", diff_image(depth_und_2, depth1_to_2, WIDTH, HEIGHT, 200));
@@ -710,10 +746,11 @@ void project_to_another_camera_new(
 		SaveToBin(depth1_to_2, prefix + "-2to1.bin");
 		auto points = calc_points_from_depth_image(depth1_to_2, WIDTH, HEIGHT, V1_FX, V1_FY, V1_CX, V1_CY);
 		auto normals = calc_normal_map(points, WIDTH, HEIGHT, V1_FX, V1_FY, V1_CX, V1_CY);
-		dump_normal_map(normals, WIDTH, HEIGHT, prefix + "-1to2-normal.png");
-		dump_shading(normals, points, WIDTH, HEIGHT, prefix + "-1to2-shaing.png");
+		dump_normal_map(normals, WIDTH, HEIGHT, prefix + "-2to1-normal.bmp");
+		dump_shading(normals, points, WIDTH, HEIGHT, prefix + "-2to1-shaing.bmp");
 
-		dump_normalized_image<float>(depth1_to_2, (prefix + "-1to2.png").c_str(), WIDTH, HEIGHT, 800, 2000);
+		dump_normalized_image<float>(depth1_to_2, (prefix + "-2to1.bmp").c_str(), WIDTH, HEIGHT, 1000, 1250);
+		dump_point_cloud(points, (prefix + "-2to1.ply").c_str());
 		//write_normalized_vector(depth1_to_2, bin_prefix + "-2to1.bmp");
 		//dump_normalized_image<float>(depth1_to_2, (bin_prefix + "-2to1.bmp").c_str(), WIDTH, HEIGHT, 800, 2000);
 		//SaveToBin(depth1_without_bias, bin_path);
@@ -1011,7 +1048,7 @@ void process(
 			dump_shading(normal_map, position, w, h, prefix + "-V2-shading.bmp");
 		}
 
-#if 0
+#if 1
 		{
 #define SHIFT_X 5
 #define SHIFT_Y 4
@@ -1034,12 +1071,15 @@ void process(
 
 		// load IRV1 and resize IRV2;
 		img_depth[0] = ToCVImage(depth_pixels[0]);
+		img_depth[1] = ResizeAndToCVImage(depth_pixels[1]);
+		depth_pixels[1] = mat_to_vector<UINT16>(img_depth[1]);
 		{
-			depth_pixels[1] = resize_image(depth_pixels[1]);
+			//depth_pixels[1] = resize_image(depth_pixels[1]);
+			//cv::resize(img_depth[1], img_depth[1], cv::Size(640, 480), 0, 0, 0);
 		}
 
-		dump_normalized_image<unsigned short>(depth_pixels[0], (prefix + "-V1.png").c_str(), WIDTH, HEIGHT, 800, 2000);
-		dump_normalized_image<unsigned short>(depth_pixels[1], (prefix + "-V2.png").c_str(), WIDTH, HEIGHT, 800, 2000);
+		dump_normalized_image<unsigned short>(depth_pixels[0], (prefix + "-V1.bmp").c_str(), WIDTH, HEIGHT, 800, 2000);
+		dump_normalized_image<unsigned short>(depth_pixels[1], (prefix + "-V2.bmp").c_str(), WIDTH, HEIGHT, 800, 2000);
 
 		//std::cout << ir1_path << '\n' << ir2_path << '\n'; 
 		//img_IR[0] = imread(ir1_path, 0);
@@ -1081,7 +1121,10 @@ void process(
 	}
 
 	Mat points_1 = calc_points(depth_und[0], V1_FX, V1_FY, V1_CX, V1_CY);
-	Mat points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+	//Mat points_2 = calc_points(depth_und[1], V2_RESIZED_FX, V2_RESIZED_FY, V2_RESIZED_CX, V2_RESIZED_CY);
+	
+	//writePly(points_1, prefix + "-a.ply");
+	//dump_point_cloud(points_1, (prefix + "-a.ply").c_str());
 
 	//writePly(points_1, IR_und[0], prefix + "-v1-und.ply", 640, 480, 0, 1, 0);
 
@@ -1161,13 +1204,13 @@ int old_main()
 #define TABLE2 "D:\\yyk\\image\\table2_zfx.txt"
 #endif 
 
-
 int main(int argc, char* argv[])
 {
 	string path_file = argc >= 2 ? argv[1] : R"(D:\cvpr\10Objects\10-selected\path.txt)";
+	//string path_file = argc >= 2 ? argv[1] : R"(D:\cvpr\synthetic\path.txt)";
 	//string extrinsic_filename = argc >= 3 ? argv[2] : EXTRINSICS_FILE_PATH;
 	//string 
-
+	 
 	{
 		const char * extrinsic_filename = EXTRINSICS_FILE_PATH;
 		FileStorage fs;

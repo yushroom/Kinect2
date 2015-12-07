@@ -36,7 +36,7 @@ std::vector<vector3f> calc_normal_map(
 	const float						cy 
 );
 
-void calc_and_dump_normal_map(
+void calc_and_dump_normal_map_and_shading(
 	const std::vector<float>&		depth,
 	const std::string&				file_path,
 	const int						width,

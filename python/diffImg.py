@@ -18,6 +18,6 @@ except:
 
 if a.shape != b.shape:
     print('Error: images have different shapes')
-    exit()
+    exit() 
 imsave(rt_path, a-b)
 

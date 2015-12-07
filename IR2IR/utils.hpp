@@ -30,6 +30,23 @@ static float bilinear(
 	bool ignore_zero = false, 
 	bool ignore_invalid = false) 
 {
+	static int dx[] = { 0, 0, 1, 1 };
+	static int dy[] = { 0, 1, 0, 1 };
+	float weight = 0.f, value = 0.f;
+	for (int i = 0; i < 4; ++i) {
+		int ix = int(x) + dx[i], iy = int(y) + dy[i];
+		if (ix < 0 || ix >= width || iy < 0 || iy >= height) continue;
+		int idx = ix + iy*width;
+		if (ignore_zero && src[idx] == 0) continue;
+		if (ignore_invalid && !VALID_DEPTH_TEST(src[idx])) continue;
+		float wx = abs(ix - x), wy = abs(iy - y);
+		float w = (1.f - wx)*(1.f - wy);
+		value += src[idx] * w;
+		weight += w;
+	}
+
+	return (weight == 0.f ? DEPTH_INVALID : value / weight);
+	/*
 	int ix0 = x, iy0 = y, ix1 = ix0 + 1, iy1 = iy0 + 1;
 	float qx1 = x - ix0, qy1 = y - iy0, qx0 = 1.f - qx1, qy0 = 1.f - qy1;
 
@@ -50,6 +67,7 @@ static float bilinear(
 	}
 
 	return (weight == 0.f ? DEPTH_INVALID : value / weight);
+	*/
 	//return static_cast<T>(weight == 0.f ? DEPTH_INVALID : value / weight);
 }
 
